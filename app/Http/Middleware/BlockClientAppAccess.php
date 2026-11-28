@@ -33,7 +33,7 @@ class BlockClientAppAccess
             }
         }
 
-        $message = 'El acceso a tu cuenta está bloqueado. Motivo: ' . ($user->clientBlockReasonDescription() ?? 'comunícate con atención al cliente.');
+        $message = 'El acceso a tu cuenta está bloqueado. Motivo: ' . ($user->clientBlockReasonDescription() ?? 'comunícate con atención al representado.');
 
         if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([

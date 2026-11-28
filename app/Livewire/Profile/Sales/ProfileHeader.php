@@ -17,7 +17,7 @@ class ProfileHeader extends Component
 
         // Spatie roles (primer rol si existe)
         $roles = $user->getRoleNames();
-        $roleName = $roles->first() ?? 'Sin rol asignado';
+        $roleName = \App\Support\RepresentedLanguage::label($roles->first() ?? 'Sin rol asignado');
 
         return view('livewire.profile.sales.profile-header', [
             'user' => $user,

@@ -145,7 +145,7 @@ class TaskController extends Controller
         $task->customer_responded = $customerResponded;
         $task->call_effective = $customerResponded;
         $task->reason_no_effective = $waitingForResponse
-            ? ($data['reason_no_effective'] ?? 'En espera de respuesta del cliente')
+            ? ($data['reason_no_effective'] ?? 'En espera de respuesta del representado')
             : null;
         $task->interest_level = $customerResponded ? $interest : null;
         $task->reason_no_interest = $customerResponded && $interest === false
@@ -174,12 +174,12 @@ class TaskController extends Controller
 
         if ($waitingForResponse) {
             return redirect()->route('tasks.show', $task)
-                ->with('success', 'Seguimiento guardado. El cliente sigue como no contactado y la tarea queda abierta para el siguiente dia.');
+                ->with('success', 'Seguimiento guardado. El representado sigue como no contactado y la tarea queda abierta para el siguiente dia.');
         }
 
         $this->markContacted->markFromTask($task);
 
-        $message = 'Gestion comercial guardada. El cliente fue marcado como contactado en la lista.';
+        $message = 'Gestion comercial guardada. El representado fue marcado como contactado en la lista.';
 
         return redirect()->route('tasks.show', $task)->with('success', $message);
     }
@@ -190,7 +190,7 @@ class TaskController extends Controller
         $this->authorizeAccess($task);
 
         if ($task->isAssignedToSystems()) {
-            return back()->with('error', 'Esta es una tarea interna de Sistemas. Se completa desde su gestion interna, sin reasignar clientes.');
+            return back()->with('error', 'Esta es una tarea interna de Sistemas. Se completa desde su gestion interna, sin reasignar representados.');
         }
 
         if ($task->isClosed()) {
@@ -394,7 +394,7 @@ class TaskController extends Controller
     private function reassignIneffectiveContact(Task $task, HubspotService $hubspot, HubspotDealOwnerSyncService $dealOwnerSync): string
     {
         if ($task->isAssignedToSystems()) {
-            return 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.';
+            return 'Tarea interna de Sistemas completada. No se reasigno ningun representado.';
         }
 
         $task->loadMissing('contact:id,name,email,hs_id,owner_id,last_task_reassigned_at');
@@ -539,7 +539,7 @@ class TaskController extends Controller
         ]);
 
         return redirect()->route('tasks.show', $task)
-            ->with('success', 'Tarea interna de Sistemas completada. No se reasigno ningun cliente.');
+            ->with('success', 'Tarea interna de Sistemas completada. No se reasigno ningun representado.');
     }
 
     private function getNextAdvisorRoundRobin(?int $excludedUserId = null): ?User

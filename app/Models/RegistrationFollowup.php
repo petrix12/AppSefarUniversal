@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class RegistrationFollowup extends Model
 {
-    protected $fillable = ['user_id','sequence','scheduled_for','sent_at','subject'];
+    protected $fillable = ['user_id','sequence','scheduled_for','sent_at','subject','status'];
 
     protected $casts = [
         'scheduled_for' => 'date',

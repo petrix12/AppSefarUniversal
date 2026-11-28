@@ -48,7 +48,7 @@
                     </div>
 
                     <div class="family-form-help">
-                        Al crear el grupo se agrega el cliente base y se buscan coincidencias iniciales por pasaporte, documento, nombre completo y apellidos compatibles en otros arboles.
+                        Al crear el grupo se agrega el representado base y se buscan coincidencias iniciales por pasaporte, documento, nombre completo y apellidos compatibles en otros arboles.
                     </div>
 
                     <div class="family-form-actions">

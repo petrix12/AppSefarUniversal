@@ -46,7 +46,7 @@
                     </div>
 
                     <div class="col-md-2 mb-2">
-                        <label class="text-muted small mb-1">Tipo de cliente</label>
+                        <label class="text-muted small mb-1">Tipo de representado</label>
                         <select name="customer_type" class="form-control form-control-sm">
                             <option value="">Todos</option>
                             <option value="contact" {{ request('customer_type') === 'contact' ? 'selected' : '' }}>Contacto</option>
@@ -120,7 +120,7 @@
     </div>
     <p class="text-muted small mt-n2 mb-3">
         Totales de las {{ $paymentTotals['rows'] }} fases filtradas en {{ $paymentTotals['projects'] }} proyectos.
-        Un pago superior al monto preestablecido se marca como inconsistencia; nunca como pagos pendientes de la empresa al cliente.
+        Un pago superior al monto preestablecido se marca como inconsistencia; nunca como pagos pendientes de la empresa al representado.
     </p>
 
     {{-- TABLA --}}

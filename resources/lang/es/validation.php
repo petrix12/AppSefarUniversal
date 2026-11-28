@@ -183,7 +183,7 @@ return [
         'username'              => 'usuario',
         'year'                  => 'año', 
         'store'                 => 'almacenamiento',
-        'IDCliente'             => 'ID Cliente',
+        'IDCliente'             => 'ID Representado',
         'IDPersona'            => 'Persona'
     ],
 ];

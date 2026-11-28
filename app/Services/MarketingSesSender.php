@@ -9,6 +9,7 @@ class MarketingSesSender
 {
     public function send(MarketingCampaign $campaign, string $recipientEmail, array $rendered): string
     {
+        app(EmailDeliveryPolicy::class)->assertDeliverable($recipientEmail);
         app(ClientRestrictionService::class)->assertEmailDeliverable($recipientEmail);
         $settings = config('marketing.ses');
         if (blank($settings['key']) || blank($settings['secret']) || blank($settings['from_email'])) {

@@ -20,7 +20,7 @@ class EnsureMcpReadToken
 
         if ($user->hasRole('Cliente')) {
             return response()->json([
-                'message' => 'El MCP no esta disponible para usuarios con rol Cliente.',
+                'message' => 'El MCP no esta disponible para usuarios con rol Representado.',
             ], 403);
         }
 

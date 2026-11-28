@@ -217,7 +217,7 @@ class UnifiedClientProfileService
             $link->entity_type !== self::ENTITY_CLIENT || (int) $link->entity_id !== (int) $client->id
         )) {
             throw new LogicException(
-                "El {$externalEntityType} {$externalId} de {$provider} ya está enlazado a otro cliente."
+                "El {$externalEntityType} {$externalId} de {$provider} ya está enlazado a otro representado."
             );
         }
 

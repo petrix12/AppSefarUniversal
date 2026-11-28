@@ -126,7 +126,7 @@ class HubspotOutboundSyncService
         };
 
         if ($model instanceof User && ! $model->hasRole('Cliente')) {
-            throw new \RuntimeException('Solo se sincronizan contactos con rol Cliente.');
+            throw new \RuntimeException('Solo se sincronizan contactos con rol Representado.');
         }
         if ($model instanceof Lead && $model->converted_at) {
             return [$model, 'contacts', 'hubspot_id', [], [

@@ -38,8 +38,8 @@
     <div class="alert alert-warning border-warning audit-notice">
         <i class="fas fa-shield-alt mr-1"></i>
         <strong>Auditoría primero.</strong> Este mapa lee catálogos locales y, cuando pulsas <em>Actualizar catálogos</em>, solo metadatos remotos de campo (nombre, clave/ID, tipo y módulo).
-        No lee valores de contactos, negocios, proyectos o items. No crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve clientes entre tableros.
-        <br><strong>Entidades separadas:</strong> contacto/cliente no equivale a negocio. El mapa distingue <code>users ↔ HubSpot Contacts ↔ Teamleader Contacts</code> de <code>negocios ↔ HubSpot Deals ↔ Teamleader Projects</code> y no propone cruces entre ambos.
+        No lee valores de contactos, negocios, proyectos o items. No crea campos en <code>users</code>, no crea <code>integration_field_mappings</code>, no activa automatizaciones y no mueve representados entre tableros.
+        <br><strong>Entidades separadas:</strong> contacto/representado no equivale a negocio. El mapa distingue <code>users ↔ HubSpot Contacts ↔ Teamleader Contacts</code> de <code>negocios ↔ HubSpot Deals ↔ Teamleader Projects</code> y no propone cruces entre ambos.
     </div>
 
     @if(! $summary['relation_storage_ready'])
@@ -56,7 +56,7 @@
             <div class="small-box bg-success"><div class="inner"><h3>{{ $summary['teamleader_fields'] }}</h3><p>{{ $summary['teamleader_contact_fields'] }} contactos · {{ $summary['teamleader_deal_fields'] }} deals · {{ $summary['teamleader_project_fields'] }} proyectos</p></div><div class="icon"><i class="fas fa-people-arrows"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
-            <div class="small-box bg-primary"><div class="inner"><h3>{{ $summary['app_fields'] }}</h3><p>{{ $summary['client_app_fields'] }} clientes · {{ $summary['business_app_fields'] }} negocios</p></div><div class="icon"><i class="fas fa-database"></i></div></div>
+            <div class="small-box bg-primary"><div class="inner"><h3>{{ $summary['app_fields'] }}</h3><p>{{ $summary['client_app_fields'] }} representados · {{ $summary['business_app_fields'] }} negocios</p></div><div class="icon"><i class="fas fa-database"></i></div></div>
         </div>
         <div class="col-lg-3 col-sm-6">
             <div class="small-box bg-warning"><div class="inner"><h3>{{ $summary['monday_fields'] }}</h3><p>Columnas Monday detectadas</p></div><div class="icon"><i class="fab fa-trello"></i></div></div>
@@ -122,7 +122,7 @@
                             @php
                                 $entityType = $row['entity_type'] ?? ($app['entity_type'] ?? 'item');
                             @endphp
-                            @if(in_array($entityType, ['client', 'contact']))<span class="badge badge-primary">Contacto / cliente</span>
+                            @if(in_array($entityType, ['client', 'contact']))<span class="badge badge-primary">Contacto / representado</span>
                             @elseif(in_array($entityType, ['business', 'deal', 'project']))<span class="badge badge-success">Negocio / proyecto</span>
                             @elseif($entityType === 'item')<span class="badge badge-warning">Item por clasificar</span>
                             @else<span class="badge badge-secondary">{{ $entityType }}</span>@endif
@@ -318,7 +318,7 @@
                     <div class="alert alert-info small">Elige los dos sistemas y el módulo que quieres comparar. En Monday, el módulo es el tablero. Después verás solo los campos de esos módulos y podrás pedir la revisión IA.</div>
                     <div class="d-flex flex-wrap align-items-center mb-3">
                         <button type="button" class="btn btn-sm btn-outline-secondary refresh-unification-catalogues"><i class="fas fa-cloud-download-alt mr-1"></i>Traer todos los catálogos remotos</button>
-                        <small class="text-muted ml-2">Lee nombres, claves/IDs, tipos y módulos; no trae valores de clientes.</small>
+                        <small class="text-muted ml-2">Lee nombres, claves/IDs, tipos y módulos; no trae valores de representados.</small>
                     </div>
                     <div id="catalogue-refresh-status" class="small text-muted mb-3">
                         HubSpot: {{ $catalog_status['hubspot']['field_count'] }} campos{{ $catalog_status['hubspot']['fetched_at'] ? ' · última actualización '.$catalog_status['hubspot']['fetched_at'] : ' · pendiente de actualizar' }}. Teamleader: {{ $catalog_status['teamleader']['field_count'] }} campos{{ $catalog_status['teamleader']['fetched_at'] ? ' · última actualización '.$catalog_status['teamleader']['fetched_at'] : ' · pendiente de actualizar' }}. Monday: {{ $catalog_status['monday']['field_count'] }} columnas{{ $catalog_status['monday']['fetched_at'] ? ' · última actualización '.$catalog_status['monday']['fetched_at'] : ' · pendiente de actualizar' }}.
@@ -349,13 +349,13 @@
             <div class="modal-dialog modal-lg" role="document"><form method="POST" action="{{ route('unification-map.relations.store') }}" class="modal-content" id="audit-relation-form">@csrf
                 <div class="modal-header"><h5 class="modal-title" id="newAuditRelationTitle">Paso 2 de 2 · Campos asociables</h5><button type="button" class="btn btn-sm btn-outline-secondary mr-3" id="change-relation-setup"><i class="fas fa-sliders-h mr-1"></i>Cambiar plataformas/módulos</button><button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button></div>
                 <div class="modal-body">
-                    <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/cliente ↔ Contacto, o Negocio ↔ Deal/Proyecto. Para Monday, escoge un tablero por cada extremo; puedes asociar columnas de tableros distintos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
+                    <div class="alert alert-info small">Selecciona dos extremos de la misma entidad: Contacto/representado ↔ Contacto, o Negocio ↔ Deal/Proyecto. Para Monday, escoge un tablero por cada extremo; puedes asociar columnas de tableros distintos. Esta conexión es de diseño: no copia datos, no crea campos y no activa ninguna sincronización.</div>
                     <div id="relation-configuration-summary" class="alert alert-light border small py-2">Primero configura las plataformas y módulos.</div>
                     <div class="mb-3">
                         <button type="button" id="ai-suggest-platform-pair" class="btn btn-sm btn-outline-info" @if(! $summary['ai_suggestions_available']) disabled title="Configura OPENROUTER_API_KEY para habilitarlo" @endif>
                             <i class="fas fa-magic mr-1"></i>IA: revisar este par
                         </button>
-                        <small class="d-block text-muted mt-1">Con ambos campos seleccionados, analiza solo esa pareja; si no hay selección, revisa como máximo 40 coincidencias del catálogo disponible. No envía datos de clientes ni guarda una relación.</small>
+                        <small class="d-block text-muted mt-1">Con ambos campos seleccionados, analiza solo esa pareja; si no hay selección, revisa como máximo 40 coincidencias del catálogo disponible. No envía datos de representados ni guarda una relación.</small>
                         <div id="ai-platform-suggestions" class="alert alert-info small mt-2 mb-0 d-none" role="status"></div>
                         <div class="border rounded bg-light p-2 mt-2" id="ai-batch-builder">
                             <div class="d-flex flex-wrap align-items-center">
@@ -445,7 +445,7 @@
         const relationStorageReady = {{ $summary['relation_storage_ready'] ? 'true' : 'false' }};
         const derivedRelations = {{ \Illuminate\Support\Js::from($derived_relations) }};
         const entityLabel = (entityType) => ({
-            client: 'Contacto / cliente', contact: 'Contacto',
+            client: 'Contacto / representado', contact: 'Contacto',
             business: 'Negocio', deal: 'Deal', project: 'Proyecto',
             item: 'Item por clasificar',
         }[entityType] || entityType || 'Sin clasificar');
@@ -644,7 +644,7 @@
         }
 
         const providerModules = {
-            app: [{value: 'client', label: 'Contactos / clientes'}, {value: 'business', label: 'Negocios'}],
+            app: [{value: 'client', label: 'Contactos / representados'}, {value: 'business', label: 'Negocios'}],
             hubspot: [{value: 'contact', label: 'Contacts'}, {value: 'deal', label: 'Deals'}],
             teamleader: [{value: 'contact', label: 'Contactos / empresas'}, {value: 'deal', label: 'Deals'}, {value: 'project', label: 'Proyectos'}],
             monday: [{value: 'item', label: 'Tablero Monday'}],
@@ -727,7 +727,7 @@
             } else if (moduleFamily(left.module) !== moduleFamily(right.module)
                 && moduleFamily(left.module) !== 'workflow' && moduleFamily(right.module) !== 'workflow') {
                 message.className = 'small text-warning';
-                message.textContent = 'No se pueden mezclar contactos/clientes con negocios/deals/proyectos.';
+                message.textContent = 'No se pueden mezclar contactos/representados con negocios/deals/proyectos.';
             } else if ((left.provider === 'monday' && !left.boardId) || (right.provider === 'monday' && !right.boardId)) {
                 message.className = 'small text-warning';
                 message.textContent = 'Selecciona el tablero de Monday para cada extremo.';
@@ -1081,7 +1081,7 @@
             button.disabled = true;
             button.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>${busyText}`;
             target.className = 'alert alert-info small mt-2 mb-0';
-            target.textContent = `Analizando ${contextLabel} entre ${left} ↔ ${right}; no se envían datos de clientes.`;
+            target.textContent = `Analizando ${contextLabel} entre ${left} ↔ ${right}; no se envían datos de representados.`;
 
             try {
                 const response = await fetch(suggestUrl, {

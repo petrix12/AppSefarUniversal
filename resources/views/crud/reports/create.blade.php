@@ -122,7 +122,7 @@ function generate_string($input, $strength = 16) {
 
                                                 <div class="px-1 py-2 m-2 flex-1">    {{-- cliente --}}
                                                     <div>
-                                                        <label for="cliente" class="block text-sm font-medium text-gray-700">Cliente</label>
+                                                        <label for="cliente" class="block text-sm font-medium text-gray-700">Representado</label>
                                                         <input value="{{ old('cliente') }}" type="text" name="cliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                         @error('cliente')
                                                             <small style="color:red">*{{ $message }}*</small>

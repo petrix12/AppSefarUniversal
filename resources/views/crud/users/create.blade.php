@@ -45,7 +45,7 @@
             <div class="md:col-span-1">
                 <div class="px-4 sm:px-0">
                     <h3 class="text-lg font-medium leading-6 text-gray-900">{{ __('User information') }}</h3>
-                    <p class="mt-1 text-sm text-gray-600">Crea un contacto con acceso de cliente. Para cuentas del equipo, usa el apartado «Usuarios internos».</p>
+                    <p class="mt-1 text-sm text-gray-600">Crea un contacto con acceso de representado. Para cuentas del equipo, usa el apartado «Usuarios internos».</p>
                     <p class="mt-2 text-sm text-gray-600">La persona recibirá un enlace seguro para establecer su propia contraseña.</p>
                 </div>
             </div>

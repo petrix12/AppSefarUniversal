@@ -134,7 +134,7 @@
                     Solicita
                 </th>
                 <th scope="col" class="">
-                    Cliente
+                    Representado
                 </th>
                 <th scope="col" class="">
                     Motivo

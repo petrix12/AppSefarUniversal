@@ -71,7 +71,7 @@ class UnclosedTasksNotification extends Notification implements ShouldQueue
 
         return [
             'title'       => "{$totalTasks} tarea(s) sin cerrar",
-            'body'        => "Tareas del {$dateStr} quedaron sin completar. Revisa el panel para ver asesores y clientes afectados.",
+            'body'        => "Tareas del {$dateStr} quedaron sin completar. Revisa el panel para ver asesores y representados afectados.",
             'action_url'  => route('tasks.admin.summary', ['date' => $this->date->toDateString()]),
             'action_text' => 'Ver panel de tareas',
             'category'    => 'tasks',

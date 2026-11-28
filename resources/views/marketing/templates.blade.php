@@ -18,8 +18,32 @@
     @endif
     @if (session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
 
-    <form method="POST" action="{{ route('marketing.templates.store') }}" id="template-builder-form">
+    <div class="card card-outline card-primary">
+        <div class="card-header"><h2 class="card-title"><i class="fas fa-wand-magic-sparkles mr-1"></i>Crear un correo con IA</h2></div>
+        <div class="card-body">
+            <details class="mb-4" open>
+                <summary class="font-weight-bold mb-2">Revisar y editar el prompt de marca</summary>
+                <label for="ai-template-system-prompt">Instrucciones para redactar los correos</label>
+                <textarea id="ai-template-system-prompt" class="form-control" rows="8" required minlength="30" maxlength="12000">{{ $templatePrompt }}</textarea>
+                <small class="form-text text-muted">Los cambios se aplican al generar el próximo borrador. Guarda el prompt para que también se conserve en futuras visitas y lo use el equipo.</small>
+                <div class="d-flex flex-wrap align-items-center mt-2">
+                    <button type="button" id="ai-template-save-prompt" class="btn btn-outline-primary btn-sm mr-2">Guardar prompt</button>
+                    <button type="button" id="ai-template-reset-prompt" class="btn btn-outline-secondary btn-sm mr-3">Restaurar prompt inicial</button>
+                    <span id="ai-template-prompt-status" role="status" class="small text-muted mt-2 mt-sm-0"></span>
+                </div>
+            </details>
+            <div class="row">
+                <div class="col-lg-8 form-group"><label for="ai-template-prompt">¿Qué quieres comunicar a tus representados?</label><textarea id="ai-template-prompt" class="form-control" rows="3" maxlength="4000" placeholder="Ej.: Un recordatorio breve del pago de registro para iniciar el análisis genealógico, con un tono cercano y una llamada a la acción clara."></textarea></div>
+                <div class="col-lg-4 form-group"><label for="ai-template-url">Enlace del botón principal</label><input id="ai-template-url" type="url" class="form-control" value="https://app.sefaruniversal.com" maxlength="2000"><small class="form-text text-muted">El diseño seguirá los colores y la identidad de Sefar Universal.</small></div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center"><button type="button" id="ai-template-generate" class="btn btn-primary mr-3"><i class="fas fa-magic mr-1"></i>Generar diseño editable</button><span id="ai-template-status" role="status" class="small text-muted mt-2 mt-sm-0"></span></div>
+            <p class="small text-muted mb-0 mt-3">Voz de marca: Sefar Universal como autoridad en Derecho Genealogista, con una comunicación segura y cercana al representado. Podrás modificar el texto, los enlaces y el diseño antes de guardar o enviar.</p>
+        </div>
+    </div>
+
+    <form method="POST" action="{{ $editingTemplate ? route('marketing.templates.update', $editingTemplate) : route('marketing.templates.store') }}" id="template-builder-form">
         @csrf
+        @if($editingTemplate) @method('PUT') @endif
         <input type="hidden" name="body_html" id="template-body-html" value="{{ old('body_html') }}">
         <div class="row">
             <div class="col-xl-3">
@@ -84,7 +108,7 @@
                     <div class="card-body">
                         <label for="template-builder-global-text-color" class="mb-1">Color de todos los textos</label>
                         <div class="input-group">
-                            <input type="color" class="form-control" id="template-builder-global-text-color" value="#35424b" aria-label="Color global de textos">
+                            <input type="color" class="form-control" id="template-builder-global-text-color" value="#093143" aria-label="Color global de textos">
                             <div class="input-group-append"><button type="button" class="btn btn-warning" id="template-builder-apply-text-color">Aplicar</button></div>
                         </div>
                         <small class="text-muted d-block mt-2">Actualiza títulos, párrafos, enlaces, botones y textos de columnas.</small>
@@ -109,8 +133,9 @@
                 <div class="card card-outline card-success">
                     <div class="card-header"><h3 class="card-title"><i class="far fa-save mr-1"></i>Guardar plantilla</h3></div>
                     <div class="card-body">
-                        <div class="form-group"><label for="template-name">Nombre</label><input required class="form-control" id="template-name" name="name" value="{{ old('name') }}" placeholder="Ej.: Boletín mensual"></div>
-                        <div class="form-group mb-0"><label for="template-subject">Asunto sugerido</label><input class="form-control" id="template-subject" name="subject" value="{{ old('subject') }}" placeholder="Ej.: Tenemos una novedad para ti"></div>
+                        <div class="form-group"><label for="template-name">Nombre</label><input required class="form-control" id="template-name" name="name" value="{{ old('name', $editingTemplate?->name) }}" placeholder="Ej.: Boletín mensual"></div>
+                        <div class="form-group"><label for="template-subject">Asunto sugerido</label><input class="form-control" id="template-subject" name="subject" value="{{ old('subject', $editingTemplate?->subject) }}" placeholder="Ej.: Tenemos una novedad para ti"></div>
+                        <div class="form-group mb-0"><label for="template-preheader">Texto de vista previa del correo</label><input class="form-control" id="template-preheader" maxlength="180" placeholder="Una frase breve que acompaña el asunto."></div>
                     </div>
                     <div class="card-footer text-right"><button class="btn btn-success"><i class="fas fa-save mr-1"></i>Guardar plantilla</button></div>
                 </div>
@@ -122,12 +147,12 @@
         <div class="card-header"><h3 class="card-title"><i class="far fa-folder-open mr-1"></i>Plantillas guardadas</h3></div>
         <div class="card-body p-0 table-responsive">
             <table class="table table-hover mb-0">
-                <thead><tr><th>Plantilla</th><th>Asunto sugerido</th><th>Creada</th></tr></thead>
+                <thead><tr><th>Plantilla</th><th>Asunto sugerido</th><th>Creada</th><th></th></tr></thead>
                 <tbody>
                     @forelse ($templates as $template)
-                        <tr><td><strong>{{ $template->name }}</strong></td><td>{{ $template->subject ?: 'Sin asunto sugerido' }}</td><td>{{ $template->created_at->format('d/m/Y H:i') }}</td></tr>
+                        <tr><td><strong>{{ $template->name }}</strong></td><td>{{ $template->subject ?: 'Sin asunto sugerido' }}</td><td>{{ $template->created_at->format('d/m/Y H:i') }}</td><td><a href="{{ route('marketing.templates.edit', $template) }}" class="btn btn-sm btn-outline-primary">Editar</a></td></tr>
                     @empty
-                        <tr><td colspan="3" class="text-center text-muted py-4">Aún no hay plantillas guardadas.</td></tr>
+                        <tr><td colspan="4" class="text-center text-muted py-4">Aún no hay plantillas guardadas.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -137,12 +162,10 @@
 @stop
 
 @section('css')
-<style>
-    .template-builder-blocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}.template-builder-palette{display:flex;min-height:74px;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;border:1px solid #dce4ea;border-radius:.45rem;background:#fff;color:#30475a;cursor:grab;font-size:.8rem;transition:all .15s}.template-builder-palette:hover,.template-builder-palette:focus{border-color:#007bff;box-shadow:0 0 0 .15rem rgba(0,123,255,.12);color:#007bff;outline:0}.template-builder-palette i{font-size:1.25rem}.template-builder-variables{display:flex;flex-wrap:wrap;gap:.45rem}.template-builder-workspace{overflow:auto;padding:1.5rem;background:#f0f4f6}.template-builder-dropzone{width:100%;max-width:700px;min-height:560px;margin:0 auto;padding:1rem;border-radius:.25rem;background:#fff;box-shadow:0 5px 22px rgba(29,51,65,.13);transition:width .2s}.template-builder-dropzone.is-mobile{width:375px;max-width:100%}.template-builder-block{position:relative;min-height:30px;border:1px solid transparent;cursor:move}.template-builder-block:hover{border-color:#9ac7ff}.template-builder-block.is-selected{border-color:#007bff;box-shadow:0 0 0 2px rgba(0,123,255,.15)}.template-builder-block.is-dragging{opacity:.45}.template-builder-block:before{position:absolute;z-index:3;top:4px;left:4px;display:none;padding:2px 5px;border-radius:3px;background:#007bff;color:#fff;content:"Arrastrar";font:700 10px Arial;pointer-events:none}.template-builder-block:hover:before,.template-builder-block.is-selected:before{display:block}.template-builder-inspector-label{font-size:.78rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase}.template-builder-preview-frame{width:100%;min-height:580px;border:0;border-radius:.25rem;background:#fff}@media(max-width:575.98px){.template-builder-toolbar{display:flex;flex-direction:column;gap:.75rem}.template-builder-toolbar .card-tools{float:none}.template-builder-workspace{padding:.7rem}}
-</style>
+<link rel="stylesheet" href="{{ asset('css/marketing-template-builder.css') }}?v={{ filemtime(public_path('css/marketing-template-builder.css')) }}">
 @stop
 
 @section('js')
-<script>window.sefarMarketingTemplateBuilder={initialHtml:@json(old('body_html')),logoUrl:@json(asset('img/logo2.png')),imageUploadUrl:@json(route('marketing.templates.images.store')),csrfToken:@json(csrf_token())};</script>
+<script>window.sefarMarketingTemplateBuilder={initialHtml:@json(old('body_html', $editingTemplate?->body_html)),logoUrl:@json(asset('img/logo2.png')),appUrl:@json(config('app.url')),imageUploadUrl:@json(route('marketing.templates.images.store')),generateUrl:@json(route('marketing.templates.generate')),savePromptUrl:@json(route('marketing.templates.prompt.update')),defaultPrompt:@json($defaultTemplatePrompt),shell:@json($emailShell),theme:@json(app(\App\Services\AppEmailTheme::class)->colors()),csrfToken:@json(csrf_token())};</script>
 <script src="{{ asset('js/marketing-template-builder.js') }}?v={{ filemtime(public_path('js/marketing-template-builder.js')) }}"></script>
 @stop

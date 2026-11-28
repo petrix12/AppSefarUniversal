@@ -82,7 +82,7 @@
                         <input type="text" name="title"
                                class="form-control @error('title') is-invalid @enderror"
                                value="{{ old('title') }}"
-                               placeholder="Comunicarse con el cliente...">
+                               placeholder="Comunicarse con el representado...">
                         @error('title')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

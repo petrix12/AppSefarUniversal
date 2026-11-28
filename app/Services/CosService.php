@@ -502,7 +502,7 @@ class CosService
         if ($jur >= 0) {
             $pasoJuridicoBuscado = $jur + 1; // Los pasos son base 1
 
-            Log::info("COS: Cliente en fase jurídica, buscando paso", [
+            Log::info("COS: Representado en fase jurídica, buscando paso", [
                 'paso_buscado' => $pasoJuridicoBuscado,
                 'jur_index' => $jur,
                 'servicio' => $this->negocio->servicio_solicitado2
@@ -533,7 +533,7 @@ class CosService
         if ($gen >= 0 && $jur == -1) { // ← CAMBIO: SOLO SI jur === -1
             $pasoGenealogicoBuscado = $gen + 1;
 
-            Log::info("COS: Cliente en fase genealógica, buscando paso", [
+            Log::info("COS: Representado en fase genealógica, buscando paso", [
                 'paso_buscado' => $pasoGenealogicoBuscado,
                 'gen_index' => $gen,
                 'servicio' => $this->negocio->servicio_solicitado2

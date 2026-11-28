@@ -37,9 +37,10 @@ class SendMarketingCampaignRecipient implements ShouldQueue
             return;
         }
         try {
+            app(\App\Services\EmailDeliveryPolicy::class)->assertDeliverable($recipient->email);
             app(\App\Services\ClientRestrictionService::class)->assertEmailDeliverable($recipient->email);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
-            $recipient->update(['status' => 'skipped', 'failure_reason' => 'Cliente bloqueado: entregas suspendidas.']);
+            $recipient->update(['status' => 'skipped', 'failure_reason' => 'Representado bloqueado: entregas suspendidas.']);
             $dispatcher->finishIfComplete($recipient->campaign);
             return;
         }

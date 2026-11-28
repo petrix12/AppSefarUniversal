@@ -1,7 +1,7 @@
 <div class="bg-white shadow rounded-xl p-6">
   <div class="flex items-center justify-between">
     <div>
-      <h3 class="font-bold text-lg">Clientes recientes</h3>
+      <h3 class="font-bold text-lg">Representados recientes</h3>
       <span class="text-xs text-gray-400">(últimos 100)</span>
     </div>
 
@@ -23,7 +23,7 @@
       </div>
     @empty
       <div class="border rounded-lg p-4 text-gray-400">
-        No hay clientes
+        No hay representados
       </div>
     @endforelse
   </div>

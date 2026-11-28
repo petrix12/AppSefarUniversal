@@ -357,7 +357,7 @@ body {
         <table>
             <tr>
                 <td class="client-box">
-                    <div class="label">Cliente</div>
+                    <div class="label">Representado</div>
                     <div class="name">{{ $customer['name'] }}</div>
                     @if($customer['vat_number'])
                         <div class="vat">{{ $customer['vat_number'] }}</div>

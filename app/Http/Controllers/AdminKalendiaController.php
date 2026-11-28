@@ -63,7 +63,7 @@ class AdminKalendiaController extends Controller
             ->where('starts_at', '<', $end->format('Y-m-d H:i:s'))
             ->where('ends_at', '>', $start->format('Y-m-d H:i:s'))
             ->orderBy('starts_at')->limit(2001)->get();
-        abort_if($appointments->count() > 2000, 422, 'Hay demasiadas citas. Usa la vista diaria o filtra por cliente o estado.');
+        abort_if($appointments->count() > 2000, 422, 'Hay demasiadas citas. Usa la vista diaria o filtra por representado o estado.');
 
         return response()->json($appointments->map(function (KalendiaAppointment $appointment) {
             $name = $appointment->user?->name ?: data_get($appointment->customer, 'name') ?: 'Contacto de Kalendia';

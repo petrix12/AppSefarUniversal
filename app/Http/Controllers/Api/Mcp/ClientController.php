@@ -130,6 +130,6 @@ class ClientController extends Controller
 
     private function ensureClient(User $user): void
     {
-        abort_unless($user->hasRole('Cliente'), 404, 'Cliente no encontrado.');
+        abort_unless($user->hasRole('Cliente'), 404, 'Representado no encontrado.');
     }
 }

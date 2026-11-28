@@ -326,13 +326,13 @@ class UnificationMapAuditService
             ->count();
 
         $nodes = [
-            'users' => ['x' => 35, 'y' => 75, 'title' => 'users', 'lines' => ['Cliente canónico', 'id']],
+            'users' => ['x' => 35, 'y' => 75, 'title' => 'users', 'lines' => ['Representado canónico', 'id']],
             'negocios' => ['x' => 35, 'y' => 255, 'title' => 'negocios', 'lines' => ['Operación comercial', 'user_id']],
             'custom_definitions' => ['x' => 285, 'y' => 35, 'title' => 'custom_field_definitions', 'lines' => ['Definición de campo', 'entity_type, key']],
             'custom_values' => ['x' => 285, 'y' => 205, 'title' => 'custom_field_values', 'lines' => ['Valor flexible', 'entity_id, definition_id']],
             'external_links' => ['x' => 535, 'y' => 35, 'title' => 'external_entity_links', 'lines' => ['Identidad externa', 'provider, entity_id']],
             'workflow_boards' => ['x' => 535, 'y' => 205, 'title' => 'workflow_boards', 'lines' => ['Tablero local', 'provider, external_board_id']],
-            'workflow_memberships' => ['x' => 535, 'y' => 375, 'title' => 'workflow_memberships', 'lines' => ['Cliente en tablero', 'entity_id, workflow_board_id']],
+            'workflow_memberships' => ['x' => 535, 'y' => 375, 'title' => 'workflow_memberships', 'lines' => ['Representado en tablero', 'entity_id, workflow_board_id']],
             'audit_relations' => ['x' => 785, 'y' => 145, 'title' => 'unification_audit_relations', 'lines' => ['Diseño aprobado', $approvedRelations->count().' relaciones']],
             'mappings' => ['x' => 785, 'y' => 345, 'title' => 'integration_field_mappings', 'lines' => ['Mapeo operativo', 'No se activa desde auditoría']],
             'hubspot' => ['x' => 1040, 'y' => 35, 'title' => 'HubSpot', 'lines' => [count($fieldOptions['hubspot']).' campos locales', $providerRelationCounts['hubspot'].' asociaciones aprobadas']],

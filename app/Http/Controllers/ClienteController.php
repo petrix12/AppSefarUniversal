@@ -1210,7 +1210,7 @@ class ClienteController extends Controller
         if (empty($treeData['columnasparatabla'])) {
             return redirect()->route('clientes.getinfo')
                 ->with('force_getinfo', true)
-                ->with('info', 'No se pudo generar el arbol genealogico. Verifica o completa nuevamente la informacion del cliente.');
+                ->with('info', 'No se pudo generar el arbol genealogico. Verifica o completa nuevamente la informacion del representado.');
         }
 
         $columnasparatabla = $treeData['columnasparatabla'];
@@ -4717,7 +4717,7 @@ class ClienteController extends Controller
                 : $serviciosDescripcion;
 
             $referencias = trim(
-                ($clienteRef ? "ID Cliente: {$clienteRef} | " : '')
+                ($clienteRef ? "ID Representado: {$clienteRef} | " : '')
                 . ($pagoRef ? "ID Pago: {$pagoRef} | " : '')
                 . "Servicios: {$serviciosDescripcion}",
                 ' |'
@@ -4814,7 +4814,7 @@ class ClienteController extends Controller
             $link = $user->passport ? 'https://app.sefaruniversal.com/tree/' . $user->passport : null;
             $referencias = trim(
                 "Forma de pago: {$formaPago} | Monto: {$monto} | "
-                . ($clienteRef ? "ID Cliente: {$clienteRef} | " : '')
+                . ($clienteRef ? "ID Representado: {$clienteRef} | " : '')
                 . ($pagoRef ? "ID Pago/Factura: {$pagoRef} | " : '')
                 . "Servicios: {$serviciosFactura}",
                 ' |'
@@ -5035,7 +5035,7 @@ class ClienteController extends Controller
                 'numeric_mkqsn730' => $monto,
 
                 // Personas por las que se paga (IDs de Stripe + Servicios completos)
-                'text_mkza4s9z' => "ID Cliente: " . $customer->id . " | ID Pago: " . $paymentIntent->id . " | Servicios: " . $serviciosDescripcion
+                'text_mkza4s9z' => "ID Representado: " . $customer->id . " | ID Pago: " . $paymentIntent->id . " | Servicios: " . $serviciosDescripcion
             ];
 
             // Query de GraphQL para crear el item
@@ -5132,7 +5132,7 @@ class ClienteController extends Controller
             'approve_with_id' => 'No se puede autorizar el pago.',
             'call_issuer' => 'La tarjeta fue rechazada por un motivo desconocido.',
             'card_not_supported' => 'La tarjeta no admite este tipo de compra.',
-            'card_velocity_exceeded' => 'El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.',
+            'card_velocity_exceeded' => 'El representado ha superado el saldo o límite de crédito disponible en su tarjeta.',
             'currency_not_supported' => 'La tarjeta no admite la moneda especificada.',
             'do_not_honor' => 'La tarjeta fue rechazada por un motivo desconocido.',
             'do_not_try_again' => 'La tarjeta fue rechazada por un motivo desconocido.',
@@ -5160,11 +5160,11 @@ class ClienteController extends Controller
             'not_permitted' => 'El pago no está permitido.',
             'offline_pin_required' => 'La tarjeta fue rechazada porque requiere un PIN.',
             'online_or_offline_pin_required' => 'La tarjeta fue rechazada porque requiere un PIN.',
-            'pickup_card' => 'El cliente no puede usar esta tarjeta para realizar este pago.',
+            'pickup_card' => 'El representado no puede usar esta tarjeta para realizar este pago.',
             'pin_try_exceeded' => 'Se superó el número permitido de intentos de PIN.',
             'processing_error' => 'Ocurrió un error al procesar la tarjeta.',
             'reenter_transaction' => 'El emisor no pudo procesar el pago por un motivo desconocido.',
-            'restricted_card' => 'El cliente no puede usar esta tarjeta para realizar este pago.',
+            'restricted_card' => 'El representado no puede usar esta tarjeta para realizar este pago.',
             'revocation_of_all_authorizations' => 'La tarjeta fue rechazada por un motivo desconocido.',
             'revocation_of_authorization' => 'La tarjeta fue rechazada por un motivo desconocido.',
             'security_violation' => 'La tarjeta fue rechazada por un motivo desconocido.',
@@ -5174,7 +5174,7 @@ class ClienteController extends Controller
             'testmode_decline' => 'Se utilizó un número de tarjeta de prueba.',
             'transaction_not_allowed' => 'La tarjeta fue rechazada por un motivo desconocido.',
             'try_again_later' => 'La tarjeta fue rechazada por un motivo desconocido.',
-            'withdrawal_count_limit_exceeded' => 'El cliente ha superado el saldo o límite de crédito disponible en su tarjeta.',
+            'withdrawal_count_limit_exceeded' => 'El representado ha superado el saldo o límite de crédito disponible en su tarjeta.',
         ];
 
         return $errors[$code] ?? 'Error desconocido: ' . $code;

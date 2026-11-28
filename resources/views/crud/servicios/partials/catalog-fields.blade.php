@@ -126,7 +126,7 @@
         <div class="form-check mt-4">
             <input type="hidden" name="visible_cliente" value="0">
             <input class="form-check-input" type="checkbox" name="visible_cliente" value="1" id="visible_cliente" {{ old('visible_cliente', $current->visible_cliente ?? false) ? 'checked' : '' }}>
-            <label class="form-check-label" for="visible_cliente">Visible en tienda de clientes</label>
+            <label class="form-check-label" for="visible_cliente">Visible en tienda de representados</label>
         </div>
     </div>
 

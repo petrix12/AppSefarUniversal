@@ -70,7 +70,7 @@ class SupportTicketController extends Controller
                 Auth::user(),
                 $data['request_description'],
                 $data['support_topic'],
-                $request->input('source', 'Perfil de cliente - Solicitud de soporte')
+                $request->input('source', 'Perfil de representado - Solicitud de soporte')
             );
         } catch (\Throwable $e) {
             report($e);
@@ -109,7 +109,7 @@ class SupportTicketController extends Controller
         if (! $client) {
             return back()
                 ->withInput()
-                ->withErrors(['client_id' => 'Selecciona un cliente valido para la prueba.']);
+                ->withErrors(['client_id' => 'Selecciona un representado valido para la prueba.']);
         }
 
         try {
@@ -176,7 +176,7 @@ class SupportTicketController extends Controller
             'No se pudo ubicar',
             'No se encontro',
             'El contacto no tiene',
-            'El cliente',
+            'El representado',
             'El propietario del contacto',
             'No se pudo obtener el propietario',
             'Selecciona',

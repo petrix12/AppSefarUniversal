@@ -642,7 +642,7 @@ class GenealogyService
     private function relationshipLabel(int $absoluteGeneration, int $slot): string
     {
         if ($absoluteGeneration <= 0) {
-            return 'Cliente';
+            return 'Representado';
         }
 
         if ($absoluteGeneration === 1) {

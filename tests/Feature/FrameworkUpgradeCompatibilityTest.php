@@ -72,7 +72,7 @@ class FrameworkUpgradeCompatibilityTest extends TestCase
 
     public function test_registration_followups_still_select_only_fifteen_day_intervals(): void
     {
-        config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
+        config(['app.timezone' => 'America/Caracas', 'database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'cache.default' => 'array']);
         DB::purge('sqlite');
         Mail::fake();
@@ -85,30 +85,29 @@ class FrameworkUpgradeCompatibilityTest extends TestCase
             $table->integer('pay');
             $table->timestamps();
         });
-        Schema::create('registration_followups', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id');
-            $table->date('scheduled_for');
-        });
+        $this->artisan('migrate', ['--path' => [
+            'database/migrations/2025_12_29_094324_create_registration_followups_table.php',
+            'database/migrations/2026_11_27_200000_add_email_suppressions_and_followup_limits.php',
+        ]])->assertExitCode(0);
         require_once database_path('migrations/2021_03_08_173429_create_permission_tables.php');
         (new \CreatePermissionTables())->up();
-        $roleId = DB::table('roles')->insertGetId(['name' => 'cliente', 'guard_name' => 'web']);
+        $roleId = DB::table('roles')->insertGetId(['name' => 'Cliente', 'guard_name' => 'web']);
+        $ids = [];
         foreach (['fifteen' => 15, 'fourteen' => 14, 'thirty' => 30, 'future' => -1] as $name => $days) {
             $id = DB::table('users')->insertGetId([
                 'email' => $name.'@example.test', 'nombres' => $name, 'apellidos' => 'Test',
                 'pay' => 0, 'created_at' => today()->subDays($days), 'updated_at' => now(),
             ]);
             DB::table('model_has_roles')->insert(['role_id' => $roleId, 'model_type' => User::class, 'model_id' => $id]);
+            $ids[$name] = $id;
         }
 
         $this->assertSame(0, Artisan::call('followups:registration-payment', ['--dry-run' => true]));
         $output = Artisan::output();
-        $this->assertStringContainsString('fifteen@example.test', $output);
-        $this->assertStringContainsString('seq 2', $output);
-        $this->assertStringContainsString('thirty@example.test', $output);
-        $this->assertStringContainsString('seq 3', $output);
-        $this->assertStringNotContainsString('fourteen@example.test', $output);
-        $this->assertStringNotContainsString('future@example.test', $output);
+        $this->assertStringContainsString('[DRY] Representado '.$ids['fifteen'].' con recordatorio pendiente.', $output);
+        $this->assertStringContainsString('[DRY] Representado '.$ids['thirty'].' con recordatorio pendiente.', $output);
+        $this->assertStringNotContainsString('[DRY] Representado '.$ids['fourteen'].' ', $output);
+        $this->assertStringNotContainsString('[DRY] Representado '.$ids['future'].' ', $output);
         $this->assertSame(0, DB::table('registration_followups')->count());
         Mail::assertNothingSent();
     }

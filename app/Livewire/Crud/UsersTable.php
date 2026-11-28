@@ -150,6 +150,14 @@ class UsersTable extends Component
         if ($hasPassportHistoryTable) {
             $query->with('passportHistories:id,user_id,passport,created_at');
         }
+        if (Schema::hasTable('email_suppressions')) {
+            $query->selectSub(\App\Models\EmailSuppression::query()->select('reason')
+                ->whereRaw('email_suppressions.email = LOWER(users.email)')->whereNull('cleared_at')->limit(1), 'email_suppression_reason');
+        }
+        if (Schema::hasTable('registration_followup_states')) {
+            $query->selectSub(\App\Models\RegistrationFollowupState::query()->select('stop_reason')
+                ->whereColumn('user_id', 'users.id')->whereNotNull('stopped_at')->limit(1), 'registration_followup_stop_reason');
+        }
 
         app(\App\Services\ClientRestrictionService::class)->scopeVisible($query, $authUser);
 
@@ -345,7 +353,7 @@ class UsersTable extends Component
         $this->closeBlockModal();
         $this->dispatch('swal:toast', [
             'icon' => 'success',
-            'title' => 'Cliente bloqueado.',
+            'title' => 'Representado bloqueado.',
         ]);
     }
 
@@ -371,7 +379,7 @@ class UsersTable extends Component
     private function authorizeUserBlocking(): void
     {
         abort_unless(Auth::user()?->hasRole('Administrador'), 403);
-        abort_unless(Schema::hasTable('user_access_blocks'), 503, 'La migración del bloqueo de clientes aún no está aplicada.');
+        abort_unless(Schema::hasTable('user_access_blocks'), 503, 'La migración del bloqueo de representados aún no está aplicada.');
     }
 
     /** ✅ Modal */

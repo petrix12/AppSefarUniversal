@@ -69,7 +69,7 @@
         {{$datos_factura[0]["hash_factura"]}}
     </footer>
     <main>
-            <b>Nombre de Cliente:</b> {{$datos_factura[0]["name"]}}<br>
+            <b>Nombre de Representado:</b> {{$datos_factura[0]["name"]}}<br>
             <b>Número de Pasaporte:</b> {{$datos_factura[0]["passport"]}}<br>
             <b>Correo Electrónico:</b> {{$datos_factura[0]["email"]}}<br>
             <b>Teléfono:</b> {{$datos_factura[0]["phone"]}}<br>
@@ -82,7 +82,7 @@
                 <b>Forma de Pago:</b> PayPal<br>
             @endif
             @if(!is_null($datos_factura[0]["idcus"]))
-                <b>ID de Cliente:</b> {{$datos_factura[0]["idcus"]}}<br>
+                <b>ID de Representado:</b> {{$datos_factura[0]["idcus"]}}<br>
             @endif
             @if(!is_null($datos_factura[0]["idcharge"]))
                 <b>ID de Pago:</b> {{$datos_factura[0]["idcharge"]}}<br>

@@ -15,7 +15,7 @@ class ClientNoteController extends Controller
     public function listing(Request $request, User $user): View
     {
         abort_if($request->user()->hasRole('Cliente'), 403);
-        abort_unless($user->hasRole('Cliente'), 404, 'Cliente no encontrado.');
+        abort_unless($user->hasRole('Cliente'), 404, 'Representado no encontrado.');
 
         return view('crud.users.notes.index', [
             'client' => $user,
@@ -25,7 +25,7 @@ class ClientNoteController extends Controller
 
     public function store(StoreClientNoteRequest $request, User $user): RedirectResponse
     {
-        abort_unless($user->hasRole('Cliente'), 404, 'Cliente no encontrado.');
+        abort_unless($user->hasRole('Cliente'), 404, 'Representado no encontrado.');
 
         $user->notes()->create([
             'user_id' => $request->user()->id,

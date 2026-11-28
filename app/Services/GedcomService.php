@@ -49,7 +49,7 @@ class GedcomService
             ->orderBy('id')
             ->get();
 
-        return $this->exportPeople($people, 'ARBOL CLIENTE ' . $root->IDCliente . '.ged');
+        return $this->exportPeople($people, 'ARBOL REPRESENTADO ' . $root->IDCliente . '.ged');
     }
 
     public function exportGlobal(): string

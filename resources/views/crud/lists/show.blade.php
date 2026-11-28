@@ -367,11 +367,11 @@
               <div class="custom-control custom-checkbox mt-3">
                 <input type="checkbox" class="custom-control-input" id="create_missing_contacts" name="create_missing" value="1">
                 <label class="custom-control-label" for="create_missing_contacts">
-                  Crear clientes no encontrados usando los campos mapeados
+                  Crear representados no encontrados usando los campos mapeados
                 </label>
               </div>
               <small class="text-muted d-block mt-1">
-                Para crear clientes nuevos se requiere nombre, apellido, pasaporte, telefono y correo electronico. Si el archivo trae servicio, se guarda; si no, el cliente queda sin servicio registrado.
+                Para crear representados nuevos se requiere nombre, apellido, pasaporte, telefono y correo electronico. Si el archivo trae servicio, se guarda; si no, el representado queda sin servicio registrado.
               </small>
 
               @if(!empty($importPreview['sample_rows']))

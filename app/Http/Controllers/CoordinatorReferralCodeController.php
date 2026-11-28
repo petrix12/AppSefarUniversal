@@ -200,9 +200,9 @@ class CoordinatorReferralCodeController extends Controller
         $name = $coordinator->name ?: 'Coordinador';
 
         return "Hola {$name},\n\n"
-            . "Este es tu codigo de referido para clientes de Sefar Universal:\n\n"
+            . "Este es tu codigo de referido para representados de Sefar Universal:\n\n"
             . "{$code->code}\n\n"
-            . "Cuando un cliente use este codigo en el formulario de pago, la compra quedara asociada a tus comisiones.\n\n"
+            . "Cuando un representado use este codigo en el formulario de pago, la compra quedara asociada a tus comisiones.\n\n"
             . "Saludos,\nSefar Universal";
     }
 }

@@ -242,7 +242,7 @@ class AdminIntegrationTokenController extends Controller
     {
         $user = User::with('roles')->findOrFail($userId);
 
-        abort_if($user->hasRole('Cliente'), 422, 'No se pueden crear tokens para usuarios con rol Cliente.');
+        abort_if($user->hasRole('Cliente'), 422, 'No se pueden crear tokens para usuarios con rol Representado.');
 
         return $user;
     }
@@ -371,7 +371,7 @@ class AdminIntegrationTokenController extends Controller
         }
 
         if (isset($target['client_id'])) {
-            return 'Cliente #' . $target['client_id'];
+            return 'Representado #' . $target['client_id'];
         }
 
         if (isset($target['type'])) {

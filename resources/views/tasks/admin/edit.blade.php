@@ -213,7 +213,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="font-weight-bold d-block">Cliente respondio</label>
+                                <label class="font-weight-bold d-block">Representado respondio</label>
                                 @php($respondedValue = old('customer_responded', is_null($task->customer_responded) ? null : ($task->customer_responded ? '1' : '0')))
                                 <div class="custom-control custom-radio custom-control-inline">
                                     <input type="radio" id="customer-responded-yes" name="customer_responded" value="1" class="custom-control-input" {{ $respondedValue === '1' ? 'checked' : '' }}>
@@ -228,7 +228,7 @@
                             <div class="form-group">
                                 <label class="font-weight-bold">Evidencia si respondio</label>
                                 <textarea name="contact_proof" rows="3" maxlength="2000" class="form-control @error('contact_proof') is-invalid @enderror" placeholder="Enlace al chat, resumen verificable o soporte de la respuesta">{{ old('contact_proof', $task->contact_proof) }}</textarea>
-                                <small class="form-text text-muted">Obligatoria si marcas que el cliente respondio.</small>
+                                <small class="form-text text-muted">Obligatoria si marcas que el representado respondio.</small>
                                 @error('contact_proof')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -274,7 +274,7 @@
                             <strong><i class="fas fa-info-circle mr-1"></i>Resultado registrado por el asesor:</strong>
                             <ul class="mb-0 mt-1 small">
                                 <li>Vias de contacto: {{ implode(', ', $task->contactMethodLabels()) ?: '-' }}</li>
-                                <li>Cliente respondio: {{ is_null($task->customer_responded) ? 'Sin registrar' : ($task->customer_responded ? 'Si' : 'No / esperando respuesta') }}</li>
+                                <li>Representado respondio: {{ is_null($task->customer_responded) ? 'Sin registrar' : ($task->customer_responded ? 'Si' : 'No / esperando respuesta') }}</li>
                                 <li>Gestion efectiva: {{ $task->call_effective ? 'Si' : 'No' }}</li>
                                 @if($task->reason_no_effective)
                                     <li>Motivo no efectiva: {{ $task->reason_no_effective }}</li>

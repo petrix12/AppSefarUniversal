@@ -30,7 +30,7 @@
                     <label class="mb-1 font-weight-bold">Buscar</label>
                     <input type="text" name="q" class="form-control form-control-sm"
                            value="{{ $filters['q'] ?? '' }}"
-                           placeholder="Cliente, correo, pasaporte o titulo">
+                           placeholder="Representado, correo, pasaporte o titulo">
                 </div>
                 <div class="col-6 col-md-3 mb-2">
                     <label class="mb-1 font-weight-bold">Estado</label>

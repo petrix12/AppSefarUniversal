@@ -9,6 +9,12 @@ use DOMElement;
 
 class MarketingEmailRenderer
 {
+    public function plainText(string $html): string
+    {
+        $html = preg_replace('#<(style|script)\b[^>]*>.*?</\1>#is', '', $html);
+        $html = preg_replace('/<\/(?:p|h[1-6]|tr|div|li)>|<br\b[^>]*>/i', "\n", $html);
+        return trim(preg_replace('/\n{3,}/', "\n\n", html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    }
     /**
      * Render a draft for the campaign editor without creating tracking links or
      * recording activity for the sample recipient.
@@ -20,7 +26,7 @@ class MarketingEmailRenderer
         return [
             'subject' => $this->personalize($subject, $recipient, false),
             'html' => $this->personalize($sanitizedHtml, $recipient),
-            'text' => $this->personalize($text ?: trim(strip_tags($sanitizedHtml)), $recipient, false),
+            'text' => $this->personalize($text ?: $this->plainText($sanitizedHtml), $recipient, false),
         ];
     }
 
@@ -40,7 +46,7 @@ class MarketingEmailRenderer
         return [
             'subject' => $this->personalize($campaign->subject, $recipient, false),
             'html' => $trackedHtml,
-            'text' => $this->personalize($campaign->body_text ?: trim(strip_tags($campaign->body_html)), $recipient, false)
+            'text' => $this->personalize($campaign->body_text ?: $this->plainText($campaign->body_html), $recipient, false)
                 ."\n\nCancelar suscripción: {$unsubscribeUrl}",
         ];
     }

@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Http;
 
 class SnsMessageVerifier
 {
-    public function verify(array $message): bool
+    public function verify(array $message, ?array $allowedTopics = null): bool
     {
-        $allowedTopics = config('marketing.ses_sns_topic_arns', []);
+        $allowedTopics ??= config('marketing.ses_sns_topic_arns', []);
         if (!$allowedTopics || !in_array($message['TopicArn'] ?? '', $allowedTopics, true)) {
             return false;
         }

@@ -16,7 +16,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ClientRegistrationExport extends StringValueBinder implements FromQuery, WithMapping, WithHeadings, WithCustomValueBinder, WithColumnWidths, WithStyles
 {
     public const GROUPS = [
-        'all' => 'Todos los clientes',
+        'all' => 'Todos los representados',
         'unpaid' => 'Sin pago de registro (PAY=0)',
         'paid' => 'Registro pagado (PAY=1)',
         'complete' => 'Información y contrato completos (PAY=2, CONTRATO=1)',

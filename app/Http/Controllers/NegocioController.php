@@ -256,7 +256,7 @@ class NegocioController extends Controller
             if (! collect($userProjects)->contains(fn ($project) => ($project['id'] ?? null) === $teamleaderId)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El proyecto seleccionado no pertenece al cliente de este negocio.',
+                    'message' => 'El proyecto seleccionado no pertenece al representado de este negocio.',
                 ], 422);
             }
         }
@@ -298,7 +298,7 @@ class NegocioController extends Controller
         if (! $user || blank($user->tl_id)) {
             return response()->json([
                 'success' => false,
-                'message' => 'El cliente no tiene un contacto asociado en Teamleader.',
+                'message' => 'El representado no tiene un contacto asociado en Teamleader.',
             ], 422);
         }
 
@@ -462,7 +462,7 @@ class NegocioController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Fase 1: Pago solicitado al cliente correctamente.'
+            'message' => 'Fase 1: Pago solicitado al representado correctamente.'
         ], 200);
     }
 
@@ -511,7 +511,7 @@ class NegocioController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Fase 2: Pago solicitado al cliente correctamente.'
+            'message' => 'Fase 2: Pago solicitado al representado correctamente.'
         ], 200);
     }
 
@@ -560,7 +560,7 @@ class NegocioController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Fase 3: Pago solicitado al cliente correctamente.'
+            'message' => 'Fase 3: Pago solicitado al representado correctamente.'
         ], 200);
     }
 
@@ -605,7 +605,7 @@ class NegocioController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'carta_nat_preestab: Pago solicitado al cliente correctamente.'
+            'message' => 'carta_nat_preestab: Pago solicitado al representado correctamente.'
         ], 200);
     }
 
@@ -650,7 +650,7 @@ class NegocioController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'carta_nat_preestab: Pago solicitado al cliente correctamente.'
+            'message' => 'carta_nat_preestab: Pago solicitado al representado correctamente.'
         ], 200);
     }
 

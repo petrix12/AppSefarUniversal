@@ -54,7 +54,7 @@
                                 ID
                             </th> --}}
                             <th scope="col" class="px-2 py-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                <span title="ID del cliente">IDC</span>
+                                <span title="ID del representado">IDC</span>
                             </th>
                             <th scope="col" class="px-1 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
                                 {{ __('Client') }}

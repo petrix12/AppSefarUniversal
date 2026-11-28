@@ -15,6 +15,12 @@ class EmailVerificationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        \Spatie\Permission\Models\Role::findOrCreate('Cliente');
+    }
+
     public function test_email_verification_screen_can_be_rendered()
     {
         if (! Features::enabled(Features::emailVerification())) {

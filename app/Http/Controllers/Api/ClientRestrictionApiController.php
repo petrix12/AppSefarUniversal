@@ -34,7 +34,7 @@ class ClientRestrictionApiController extends Controller
     {
         $data = $request->validate(['hubspot_id' => ['required', 'string', 'regex:/^\d+$/']]);
         $clients = User::role('Cliente')->where('hs_id', $data['hubspot_id'])->get();
-        abort_if($clients->isEmpty(), 404, 'Contacto sin cliente vinculado en la App.');
+        abort_if($clients->isEmpty(), 404, 'Contacto sin representado vinculado en la App.');
         try {
             $state = $hubspot->clientRetirement($data['hubspot_id']);
         } catch (\Throwable $exception) {

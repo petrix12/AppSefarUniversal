@@ -1,3 +1,4 @@
+@component('mail.layouts.base')
 @php
     $taskUrl = route('tasks.show', $task);
 @endphp
@@ -45,3 +46,4 @@
 </p>
 
 <p>Este mensaje fue generado automaticamente.</p>
+@endcomponent

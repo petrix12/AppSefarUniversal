@@ -74,7 +74,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
                     @endforeach
                     <tr>
                         <td style="padding: 4px 7px;">
-                            Total de Clientes en <b>{{$key}}</b>:
+                            Total de Representados en <b>{{$key}}</b>:
                         </td>
                         <td style="text-align: center; padding: 4px 7px; width: 20%;">{{$total}}</td>
                     </tr>
@@ -168,7 +168,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
                     @endforeach
                     <tr>
                         <td style="padding: 4px 7px;">
-                            Total de Clientes en <b>{{$key}}</b>:
+                            Total de Representados en <b>{{$key}}</b>:
                         </td>
                         <td style="text-align: center; padding: 4px 7px; width: 20%;">{{$total}}</td>
                     </tr>

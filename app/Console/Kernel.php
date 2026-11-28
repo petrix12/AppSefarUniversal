@@ -68,6 +68,7 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/cos-worker.log'));
         $schedule->command('followups:registration-payment')
         ->dailyAt('09:00')
+        ->timezone('America/Caracas')
         ->withoutOverlapping();
         $schedule->command('cos:refresh-active-clients')
             ->dailyAt('02:15')

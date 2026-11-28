@@ -1,6 +1,6 @@
 <div class="table-responsive">
     <table class="table table-striped align-middle">
-        <thead><tr>@if($showClient ?? false)<th>Cliente</th>@endif<th>Servicio</th><th>Fecha y hora local</th><th>Profesional</th><th>Estado</th><th>Reunión</th></tr></thead>
+        <thead><tr>@if($showClient ?? false)<th>Representado</th>@endif<th>Servicio</th><th>Fecha y hora local</th><th>Profesional</th><th>Estado</th><th>Reunión</th></tr></thead>
         <tbody>
         @forelse($appointments as $item)
             <tr>

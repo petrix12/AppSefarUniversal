@@ -235,7 +235,7 @@ return [
             'text' => 'Contactos y representados',
             'icon' => 'fas fa-fw fa-users',
             'submenu' => [
-                ['text' => 'Contactos y expedientes', 'icon' => 'fa-fw fas fa-users-cog', 'icon_color' => 'white', 'url' => 'users', 'can' => 'menu.clients', 'data' => ['search' => 'usuarios representados clientes cos']],
+                ['text' => 'Contactos y expedientes', 'icon' => 'fa-fw fas fa-users-cog', 'icon_color' => 'white', 'url' => 'users', 'can' => 'menu.clients', 'data' => ['search' => 'usuarios representados representados cos']],
                 ['text' => 'Exportar representados', 'icon' => 'fa-fw fas fa-file-export', 'icon_color' => 'white', 'route' => 'admin.client-exports.index', 'can' => 'clients.export'],
                 ['text' => 'Bloqueos de representados', 'icon' => 'fa-fw fas fa-user-lock', 'route' => 'admin.client-restrictions.index', 'can' => 'clients.blocks.review'],
                 ['text' => 'Alertas', 'icon' => 'fa-fw fa fa-exclamation-triangle', 'icon_color' => 'white', 'can' => 'alertasapp.index', 'url' => 'alerts'],
@@ -283,7 +283,7 @@ return [
             'submenu' => [
                 ['text' => 'Calendario de Kalendia', 'route' => 'admin.kalendia.appointments', 'icon' => 'fa-fw fas fa-calendar-alt', 'can' => 'kalendia.manage'],
                 ['text' => 'Consultas y precios', 'route' => 'admin.kalendia.offers', 'icon' => 'fa-fw fas fa-tags', 'can' => 'kalendia.manage', 'data' => ['search' => 'kalendia consultas precios']],
-                ['text' => 'Administrar Kalendia', 'url' => 'admin/plataformas/kalendia/main', 'icon' => 'fas fa-fw fa-calendar-check', 'can' => 'kalendia.manage', 'data' => ['search' => 'kalendia clientes servicios profesionales webhooks']],
+                ['text' => 'Administrar Kalendia', 'url' => 'admin/plataformas/kalendia/main', 'icon' => 'fas fa-fw fa-calendar-check', 'can' => 'kalendia.manage', 'data' => ['search' => 'kalendia representados servicios profesionales webhooks']],
                 ['text' => 'Calendarios anteriores', 'icon' => 'fa-fw fas fa-calendar-alt', 'icon_color' => 'white', 'can' => 'administrador', 'url' => 'admin/consultation-calendars'],
             ],
         ],
@@ -358,8 +358,8 @@ return [
                     'icon_color' => 'white',
                     'can' => ['genealogista', 'produccion'],
                     'submenu' => [
-                        ['text' => 'Clientes y ancestros', 'icon' => 'fa-fw fas fa-user-plus', 'icon_color' => 'white', 'route' => 'crud.agclientes.index', 'can' => 'crud.agclientes.index'],
-                        ['text' => 'Clientes y familiares', 'icon' => 'fa-fw fas fa-user-shield', 'icon_color' => 'white', 'route' => 'crud.families.index', 'can' => 'crud.families.index'],
+                        ['text' => 'Representados y ancestros', 'icon' => 'fa-fw fas fa-user-plus', 'icon_color' => 'white', 'route' => 'crud.agclientes.index', 'can' => 'crud.agclientes.index'],
+                        ['text' => 'Representados y familiares', 'icon' => 'fa-fw fas fa-user-shield', 'icon_color' => 'white', 'route' => 'crud.families.index', 'can' => 'crud.families.index'],
                         ['text' => 'Grupos familiares', 'icon' => 'fa-fw fas fa-people-arrows', 'icon_color' => 'white', 'route' => 'family-groups.index', 'can' => 'genealogista'],
                         ['text' => 'Archivos de expedientes', 'icon' => 'fa-fw fas fa-passport', 'icon_color' => 'white', 'route' => 'crud.files.index', 'can' => 'crud.files.index'],
                     ],
@@ -388,6 +388,7 @@ return [
             'submenu' => [
                 ['text' => 'Copias de plataformas', 'route' => 'admin.platforms.imports.index', 'icon' => 'fas fa-fw fa-database', 'can' => 'platforms.manage'],
                 ['text' => 'Sincronización CRM', 'route' => 'admin.integrations.crm-sync', 'icon' => 'fas fa-sync-alt', 'can' => 'integrations.manage'],
+                ['text' => 'Correo de la app', 'route' => 'admin.integrations.app-mail.index', 'icon' => 'fas fa-fw fa-envelope', 'can' => 'integrations.manage', 'data' => ['search' => 'correo smtp amazon ses entrega spam']],
                 [
                     'text' => 'Teamleader',
                     'icon' => 'fa-fw fas fa-database',
@@ -520,7 +521,7 @@ return [
                     'text' => 'Mantenimiento de la App',
                     'icon' => 'fas fa-fw fa-tools',
                     'submenu' => [
-                        ['text' => 'Migrar clientes', 'icon' => 'fa-fw fas fa-file-import', 'icon_color' => 'white', 'url' => 'client-import', 'can' => 'administrador'],
+                        ['text' => 'Migrar representados', 'icon' => 'fa-fw fas fa-file-import', 'icon_color' => 'white', 'url' => 'client-import', 'can' => 'administrador'],
                         ['text' => 'Corregir pasaportes', 'icon' => 'fa-fw fas fa-passport', 'icon_color' => 'white', 'url' => 'fixpassport', 'can' => 'administrador'],
                         ['text' => 'Actualizaciones de la app', 'icon' => 'fa-fw fas fa-history', 'icon_color' => 'white', 'route' => 'deployment-histories.index', 'can' => 'administrador'],
                         [

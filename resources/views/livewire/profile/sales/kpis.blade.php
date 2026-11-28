@@ -1,7 +1,7 @@
 <div class="grid grid-cols-4 gap-4 w-full">
 
   <div class="bg-white shadow rounded-xl p-4">
-    <div class="text-xs text-gray-500">Clientes asignados</div>
+    <div class="text-xs text-gray-500">Representados asignados</div>
     <div class="text-3xl font-bold text-slate-700">{{ $clientes }}</div>
     <div class="text-xs text-gray-400 mt-1">Total en la app</div>
   </div>

@@ -26,7 +26,7 @@
                 <thead>
                     <tr>
                         <th>Número</th>
-                        <th>Cliente</th>
+                        <th>Representado</th>
                         <th>Fecha</th>
                         <th>Vence</th>
                         <th>Total</th>

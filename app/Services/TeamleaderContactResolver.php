@@ -59,7 +59,7 @@ class TeamleaderContactResolver
         }
 
         if ($failOnError && $lookupError) {
-            throw new \RuntimeException('No se pudo comprobar el contacto del cliente en Teamleader.', 0, $lookupError);
+            throw new \RuntimeException('No se pudo comprobar el contacto del representado en Teamleader.', 0, $lookupError);
         }
 
         Log::channel('teamleader')->info('Teamleader: contacto no encontrado; se omite sincronizacion TL', [

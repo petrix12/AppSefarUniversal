@@ -28,7 +28,7 @@ class CrmContactLookupController extends Controller
             ->orderBy('name')->limit(12)->get(['id', 'name', 'email'])
             ->map(fn (User $client) => [
                 'type' => 'client', 'id' => $client->id,
-                'label' => trim($client->name . ' · ' . ($client->email ?: 'Cliente #' . $client->id)) . ' (Cliente)',
+                'label' => trim($client->name . ' · ' . ($client->email ?: 'Representado #' . $client->id)) . ' (Representado)',
             ]);
 
         return response()->json($leads->concat($clients)->values());

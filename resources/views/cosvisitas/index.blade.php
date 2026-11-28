@@ -46,7 +46,7 @@
           <tr>
             <th>#</th>
             <th>Usuario</th>
-            <th>Cliente</th>
+            <th>Representado</th>
             <th>Fecha de visita</th>
           </tr>
         </thead>
@@ -62,7 +62,7 @@
 
               $cliente = $c?->nombres
                 ? trim($c->nombres.' '.($c->apellidos ?? ''))
-                : ($c?->name ?? 'Cliente desconocido');
+                : ($c?->name ?? 'Representado desconocido');
             @endphp
 
             <tr>

@@ -37,32 +37,32 @@ class SefarMcpReadToolService
         return [
             [
                 'name' => 'resumen_cliente',
-                'description' => 'Resume datos operativos del cliente: ficha, conteos, ultimo negocio, compras, facturas, documentos, solicitudes y tareas sin recalcular COS.',
+                'description' => 'Resume datos operativos del representado: ficha, conteos, ultimo negocio, compras, facturas, documentos, solicitudes y tareas sin recalcular COS.',
                 'inputSchema' => $this->clientIdSchema(),
             ],
             [
                 'name' => 'listar_negocios_cliente',
-                'description' => 'Lista negocios locales asociados a un cliente, incluyendo estados operativos, servicio, IDs externos y fechas clave.',
+                'description' => 'Lista negocios locales asociados a un representado, incluyendo estados operativos, servicio, IDs externos y fechas clave.',
                 'inputSchema' => $this->clientListSchema(50, 10),
             ],
             [
                 'name' => 'listar_compras_cliente',
-                'description' => 'Lista compras, pagos y servicios adquiridos por un cliente desde la base local.',
+                'description' => 'Lista compras, pagos y servicios adquiridos por un representado desde la base local.',
                 'inputSchema' => $this->clientListSchema(50, 20),
             ],
             [
                 'name' => 'listar_facturas_cliente',
-                'description' => 'Lista facturas locales de un cliente y sus compras asociadas.',
+                'description' => 'Lista facturas locales de un representado y sus compras asociadas.',
                 'inputSchema' => $this->clientListSchema(50, 20),
             ],
             [
                 'name' => 'listar_documentos_cliente',
-                'description' => 'Lista documentos cargados y solicitudes documentales del cliente.',
+                'description' => 'Lista documentos cargados y solicitudes documentales del representado.',
                 'inputSchema' => $this->clientListSchema(100, 25),
             ],
             [
                 'name' => 'listar_tareas_cliente',
-                'description' => 'Lista tareas comerciales u operativas asociadas al cliente como contacto.',
+                'description' => 'Lista tareas comerciales u operativas asociadas al representado como contacto.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -658,7 +658,7 @@ class SefarMcpReadToolService
         $user = User::find($id);
 
         if (! $user || ! $user->hasRole('Cliente')) {
-            throw new RuntimeException('Cliente no encontrado.');
+            throw new RuntimeException('Representado no encontrado.');
         }
 
         return $user;

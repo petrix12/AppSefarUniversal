@@ -91,7 +91,7 @@ class CosMondayLookup
                     $response->throw();
                     $part = $response->json();
                     if (! empty($part['errors']) || ! is_array($part['data'] ?? null)) {
-                        throw new RuntimeException('Monday no completó la búsqueda COS; no se cachea como cliente ausente.');
+                        throw new RuntimeException('Monday no completó la búsqueda COS; no se cachea como representado ausente.');
                     }
                     $data['data'] = array_replace($data['data'], $part['data']);
                 }

@@ -64,7 +64,7 @@
                             </th>
                             @can('administrar.documentos')
                             <th scope="col" class="px-1 py-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                <span title="ID de cliente">IDC</span>
+                                <span title="ID de representado">IDC</span>
                             </th>
                             @endcan
                             <th scope="col" class="px-1 y-2 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">
@@ -95,7 +95,7 @@
                                 {{ $file->tipo }}
                             </td>
                             <td class="px-1 py-2 text-xs whitespace-nowrap">
-                                {{ GetPersona($file->IDPersona) }}
+                                {{ \App\Support\RepresentedLanguage::label(GetPersona($file->IDPersona)) }}
                             </td>
                             @can('administrar.documentos')
                             <td class="px-1 py-2 text-xs whitespace-nowrap text-center">
@@ -104,7 +104,7 @@
                                         $nombre = $users->where('id',$file->user_id)->first()->name;
                                         $pasaporte = $users->where('id',$file->user_id)->first()->passport;
                                     } catch (\Throwable $th) {
-                                        $nombre = "Documento no asignado a ningún cliente";
+                                        $nombre = "Documento no asignado a ningún representado";
                                         $pasaporte = "S/P";
                                     }
                                 @endphp

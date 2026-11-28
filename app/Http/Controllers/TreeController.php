@@ -63,7 +63,7 @@ class TreeController extends Controller
 
         if ($treeId === null) {
             return redirect()->route('crud.users.index')
-                ->with('info', 'El cliente no tiene un árbol asociado. Verifica el pasaporte o el ID secundario del árbol.');
+                ->with('info', 'El representado no tiene un árbol asociado. Verifica el pasaporte o el ID secundario del árbol.');
         }
 
         return $this->renderTree($treeId, treeOwner: $user);

@@ -204,7 +204,7 @@ class LocalCosPortfolioService
     public function writeCsv($stream, iterable $rows): void
     {
         fwrite($stream, "\xEF\xBB\xBF");
-        fputcsv($stream, ['ID', 'Cliente', 'Pasaporte', 'Correo', 'Certificado registrado', 'Fechas certificado', 'Saldo conocido EUR', 'Cobrable en portal EUR', 'Estado', 'Revisión'], ';');
+        fputcsv($stream, ['ID', 'Representado', 'Pasaporte', 'Correo', 'Certificado registrado', 'Fechas certificado', 'Saldo conocido EUR', 'Cobrable en portal EUR', 'Estado', 'Revisión'], ';');
         foreach ($rows as $row) {
             $cells = [$row['client_id'], $row['name'], $row['passport'], $row['email'], $row['has_certificate'] ? 'Sí' : 'No registrado', implode(' | ', $row['certificate_dates']), $row['known_balance_eur'], $row['collectible_balance_eur'], self::STATUS_LABELS[$row['status']], implode(' | ', $row['review_reasons'])];
             fputcsv($stream, array_map(fn ($cell) => preg_match('/^[\s]*[=+@\-]/u', (string) $cell) ? "'".$cell : $cell, $cells), ';');

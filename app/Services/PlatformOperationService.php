@@ -146,7 +146,7 @@ class PlatformOperationService
                 $appointment=$read['items'][0]??[];
                 if (count($read['items']??[])!==1 || ($appointment['id']??null)!==$input['appointment_id']
                     || ($appointment['client_id']??null)!==$input['customer_id'] || ($appointment['service_id']??null)!==$input['service_id']) {
-                    throw ValidationException::withMessages(['appointment_id'=>'La cita, el cliente y el servicio deben corresponder al mismo registro de Kalendia.']);
+                    throw ValidationException::withMessages(['appointment_id'=>'La cita, el representado y el servicio deben corresponder al mismo registro de Kalendia.']);
                 }
                 return ['method'=>'POST','path'=>'forms/submissions','resource'=>'submissions','response_key'=>'submission','data'=>[
                     'form_id'=>$record->remote_id,'appointment_id'=>$input['appointment_id'],'customer_id'=>$input['customer_id'],'service_id'=>$input['service_id'],'values'=>$input['values']]];

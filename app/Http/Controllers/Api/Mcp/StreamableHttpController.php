@@ -138,7 +138,7 @@ class StreamableHttpController extends Controller
                     'instructions' => implode(' ', [
                         'MCP privado de App Sefar ejecutado dentro de Laravel.',
                         'La autenticacion usa Bearer Token de Sanctum con permiso mcp:read.',
-                        'Usuarios con rol Cliente no pueden usar este MCP.',
+                        'Usuarios con rol Representado no pueden usar este MCP.',
                         'Las herramientas integrales y de edicion de perfiles solo estan disponibles para usuarios con rol Administrador.',
                         'Las consultas y herramientas se auditan antes y despues de ejecutarse.',
                     ]),
@@ -179,7 +179,7 @@ class StreamableHttpController extends Controller
             ],
             [
                 'name' => 'buscar_cliente',
-                'description' => 'Busca clientes por nombre, email, pasaporte, telefono o ID desde Laravel.',
+                'description' => 'Busca representados por nombre, email, pasaporte, telefono o ID desde Laravel.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -200,7 +200,7 @@ class StreamableHttpController extends Controller
             ],
             [
                 'name' => 'ver_cliente',
-                'description' => 'Lee informacion basica de un cliente por ID.',
+                'description' => 'Lee informacion basica de un representado por ID.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -450,7 +450,7 @@ class StreamableHttpController extends Controller
         $user = User::find($id);
 
         if (! $user || ! $user->hasRole('Cliente')) {
-            throw new RuntimeException('Cliente no encontrado.');
+            throw new RuntimeException('Representado no encontrado.');
         }
 
         return $user;

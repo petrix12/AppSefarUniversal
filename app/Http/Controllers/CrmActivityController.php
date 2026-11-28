@@ -31,7 +31,7 @@ class CrmActivityController extends Controller
         abort_if($lead && $client, 422, 'Selecciona un único contacto.');
         return view('crm.activities.form', [
             'activity' => new CrmActivity(['type' => 'note', 'occurred_at' => now(), 'lead_id' => $lead?->id, 'client_id' => $client?->id]),
-            'contactLabel' => $lead ? trim($lead->nombre . ' · ' . ($lead->email ?: '')) . ' (Lead)' : ($client ? trim($client->name . ' · ' . ($client->email ?: '')) . ' (Cliente)' : ''),
+            'contactLabel' => $lead ? trim($lead->nombre . ' · ' . ($lead->email ?: '')) . ' (Lead)' : ($client ? trim($client->name . ' · ' . ($client->email ?: '')) . ' (Representado)' : ''),
             'action' => route('crm.activities.store'), 'method' => 'POST',
         ]);
     }
@@ -43,7 +43,7 @@ class CrmActivityController extends Controller
             'activity' => $activity,
             'contactLabel' => $activity->lead
                 ? trim($activity->lead->nombre . ' · ' . ($activity->lead->email ?: '')) . ' (Lead)'
-                : ($activity->client ? trim($activity->client->name . ' · ' . ($activity->client->email ?: '')) . ' (Cliente)' : ''),
+                : ($activity->client ? trim($activity->client->name . ' · ' . ($activity->client->email ?: '')) . ' (Representado)' : ''),
             'action' => route('crm.activities.update', $activity), 'method' => 'PUT',
         ]);
     }
@@ -85,7 +85,7 @@ class CrmActivityController extends Controller
         $leadId = $request->integer('lead_id') ?: null;
         $clientId = $request->integer('client_id') ?: null;
         if ((bool) $leadId === (bool) $clientId) {
-            throw ValidationException::withMessages(['contact_search' => 'Selecciona exactamente un lead o un cliente de la lista.']);
+            throw ValidationException::withMessages(['contact_search' => 'Selecciona exactamente un lead o un representado de la lista.']);
         }
         if ($clientId) {
             if (! User::clients()->whereKey($clientId)->exists()) {

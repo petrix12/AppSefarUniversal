@@ -56,7 +56,7 @@ class RoleController extends Controller
         }
 
         // Mensaje 
-        Alert::success('¡Éxito!', 'Se ha creado el rol: ' . $request->name);
+        Alert::success('¡Éxito!', 'Se ha creado el rol: ' . \App\Support\RepresentedLanguage::label($request->name));
         
         // Redireccionar a la vista index
         return redirect()->route('crud.roles.index');
@@ -117,7 +117,7 @@ class RoleController extends Controller
         }
 
         // Mensaje 
-        Alert::success('¡Éxito!', 'Se ha actualizado el rol a : ' . $request->name);
+        Alert::success('¡Éxito!', 'Se ha actualizado el rol a : ' . \App\Support\RepresentedLanguage::label($request->name));
         
         // Redireccionar a la vista index
         return redirect()->route('crud.roles.index');
@@ -135,7 +135,7 @@ class RoleController extends Controller
         
         $role->delete();
 
-        Alert::info('¡Advertencia!', 'Se ha eliminado el rol: ' . $nombre);
+        Alert::info('¡Advertencia!', 'Se ha eliminado el rol: ' . \App\Support\RepresentedLanguage::label($nombre));
 
         return redirect()->route('crud.roles.index');
     }

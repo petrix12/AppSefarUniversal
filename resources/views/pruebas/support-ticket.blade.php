@@ -43,7 +43,7 @@
                 @csrf
 
                 <div class="form-group">
-                    <label for="select-client">Cliente de prueba</label>
+                    <label for="select-client">Representado de prueba</label>
                     @php
                         $selectedClient = old('client_id') ? \App\Models\User::find(old('client_id')) : null;
                     @endphp
@@ -125,7 +125,7 @@
             $('#select-client').select2({
                 theme: 'bootstrap-4',
                 language: 'es',
-                placeholder: 'Buscar cliente por nombre, email o pasaporte...',
+                placeholder: 'Buscar representado por nombre, email o pasaporte...',
                 allowClear: true,
                 minimumInputLength: 2,
                 ajax: {

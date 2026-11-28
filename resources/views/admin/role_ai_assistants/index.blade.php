@@ -12,7 +12,7 @@
     @endif
 
     <div class="alert alert-info">
-        Cada rol interno tiene un asistente propio. El rol Cliente queda excluido.
+        Cada rol interno tiene un asistente propio. El rol Representado queda excluido.
     </div>
 
     <div class="card">

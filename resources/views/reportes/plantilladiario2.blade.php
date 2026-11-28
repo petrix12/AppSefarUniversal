@@ -270,7 +270,7 @@
             <table>
                 <thead class="theadreport">
                     <tr>
-                        <th>Cliente</th>
+                        <th>Representado</th>
                         <th>Servicio</th>
                         <th>Monto</th>
                         <th>Método de Pago</th>
@@ -314,7 +314,7 @@
             <table>
                 <thead class="theadreport">
                     <tr>
-                        <th>Cliente</th>
+                        <th>Representado</th>
                         <th>Servicio</th>
                         <th>Monto</th>
                         <th>Método de Pago</th>

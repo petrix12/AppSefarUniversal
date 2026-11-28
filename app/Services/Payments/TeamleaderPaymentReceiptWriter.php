@@ -41,7 +41,7 @@ class TeamleaderPaymentReceiptWriter
                 $matches = collect($contact['companies'] ?? [])->contains(
                     fn ($company) => (string) ($company['id'] ?? data_get($company, 'company.id')) === (string) ($customer['id'] ?? ''));
             }
-            if (! $matches) throw new PaymentSyncReviewException('El cliente del proyecto Teamleader no coincide con el abono.');
+            if (! $matches) throw new PaymentSyncReviewException('El representado del proyecto Teamleader no coincide con el abono.');
 
             $state->save(['phase_update_started' => true, 'last_operation' => 'projects.info/update.payment-field']);
             app(TeamleaderProjectPaymentWriter::class)->appendPhasePayment(

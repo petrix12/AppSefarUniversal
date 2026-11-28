@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Exportar clientes')
+@section('title', 'Exportar representados')
 
 @section('content_header')
-    <h1>Exportar clientes</h1>
+    <h1>Exportar representados</h1>
 @stop
 
 @section('content')
@@ -13,11 +13,11 @@
             <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        <p class="text-muted">Descarga los datos de los clientes según su pago de registro y contrato.</p>
+        <p class="text-muted">Descarga los datos de los representados según su pago de registro y contrato.</p>
 
         @php
             $summaryLabels = [
-                'all' => ['Todos los clientes', 'Todos los estados'],
+                'all' => ['Todos los representados', 'Todos los estados'],
                 'unpaid' => ['Sin pago de registro', 'PAY = 0'],
                 'paid' => ['Registro pagado', 'PAY = 1'],
                 'complete' => ['Registro completo', 'PAY = 2 · CONTRATO = 1'],
@@ -60,7 +60,7 @@
                         </select>
                     </div>
                     <div class="client-export-field">
-                        <label for="export-search">Buscar cliente</label>
+                        <label for="export-search">Buscar representado</label>
                         <input id="export-search" name="q" type="search" maxlength="200" class="form-control"
                                value="{{ $filters['q'] }}" placeholder="Nombre, correo, teléfono o documento">
                     </div>
@@ -72,7 +72,7 @@
 
                 <div class="client-export-downloads">
                     <div class="client-export-result">
-                        <strong>{{ number_format($clients->total()) }} {{ $clients->total() === 1 ? 'cliente encontrado' : 'clientes encontrados' }}</strong>
+                        <strong>{{ number_format($clients->total()) }} {{ $clients->total() === 1 ? 'representado encontrado' : 'representados encontrados' }}</strong>
                         <p class="client-export-note mb-0">La descarga incluye todos los resultados, aunque estén en varias páginas.</p>
                     </div>
                     <div class="sefar-actions">
@@ -85,18 +85,18 @@
                     </div>
                 </div>
                 <p class="client-export-note mt-3 mb-1">Incluye datos de contacto, documento, servicio, PAY, CONTRATO y fecha de registro.</p>
-                <p class="client-export-note mb-0">«Todos los clientes» también incluye otros estados o registros sin estado de pago.</p>
+                <p class="client-export-note mb-0">«Todos los representados» también incluye otros estados o registros sin estado de pago.</p>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header"><h2 class="card-title">Vista previa de los clientes</h2></div>
+            <div class="card-header"><h2 class="card-title">Vista previa de los representados</h2></div>
             <div class="card-body p-0">
-                <div class="table-responsive" role="region" aria-label="Vista previa de clientes" tabindex="0">
+                <div class="table-responsive" role="region" aria-label="Vista previa de representados" tabindex="0">
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th scope="col">Cliente</th>
+                                <th scope="col">Representado</th>
                                 <th scope="col">Correo</th>
                                 <th scope="col">Teléfono</th>
                                 <th scope="col">Documento</th>
@@ -119,7 +119,7 @@
                                     <td>{{ \App\Exports\ClientRegistrationExport::registrationStatus($client) }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="8" class="text-center text-muted p-4">No hay clientes que coincidan con los filtros.</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted p-4">No hay representados que coincidan con los filtros.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

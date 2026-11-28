@@ -226,7 +226,7 @@
 
 	            var meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-	            var table = '<table id="example" class="table table-striped" style="width: 100%;"><thead><tr><th>Correo cliente</th><th>Monto</th><th>Fecha (España, Venezuela)</th><th>Pago ID</th></tr></thead><tbody>';
+	            var table = '<table id="example" class="table table-striped" style="width: 100%;"><thead><tr><th>Correo representado</th><th>Monto</th><th>Fecha (España, Venezuela)</th><th>Pago ID</th></tr></thead><tbody>';
 
 	            var balance = 0;
 

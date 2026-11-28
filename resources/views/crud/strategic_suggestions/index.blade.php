@@ -34,7 +34,7 @@
                     Las mejores organizaciones crecen gracias a quienes se atreven a aportar con criterio.
                 </p>
                 <p class="mb-2">
-                    Tu experiencia en el terreno, tu contacto con clientes y tu visión operativa contienen información que puede marcar la diferencia.
+                    Tu experiencia en el terreno, tu contacto con representados y tu visión operativa contienen información que puede marcar la diferencia.
                 </p>
                 <p class="mb-2">
                     Si detectas una oportunidad de mejora, una optimización en procesos, una nueva línea comercial o una inquietud relevante, este es el lugar adecuado.

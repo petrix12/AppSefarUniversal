@@ -74,7 +74,7 @@
         </div>
 
         <div class="card card-outline card-secondary">
-            <div class="card-header"><h6 class="mb-0"><i class="fas fa-user mr-1"></i> Cliente</h6></div>
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-user mr-1"></i> Representado</h6></div>
             <div class="card-body">
                 @if($contact)
                     <a href="{{ route('teamleader.contacts.show', $contact->id) }}" class="font-weight-bold">
@@ -89,7 +89,7 @@
                         <br><small class="text-muted">{{ $company->email }}</small>
                     @endif
                 @else
-                    <span class="text-muted">Sin cliente asociado</span>
+                    <span class="text-muted">Sin representado asociado</span>
                 @endif
             </div>
         </div>

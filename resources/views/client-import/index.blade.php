@@ -1,11 +1,11 @@
 @extends('adminlte::page')
 
-@section('title', 'Migrar clientes')
+@section('title', 'Migrar representados')
 
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div>
-            <h1 class="mb-0"><i class="fas fa-file-import mr-2"></i>Migrar clientes a la App</h1>
+            <h1 class="mb-0"><i class="fas fa-file-import mr-2"></i>Migrar representados a la App</h1>
             <small class="text-muted">Busca un contacto en HubSpot o Teamleader y crea/vincula su usuario local.</small>
         </div>
         <a href="{{ route('crud.users.index') }}" class="btn btn-outline-secondary btn-sm">

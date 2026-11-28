@@ -11,15 +11,16 @@
     const counter = document.getElementById('template-builder-count');
     const logoUrl = config.logoUrl || '/img/logo2.png';
     const globalTextColor = document.getElementById('template-builder-global-text-color');
+    const theme = config.theme || {primary:'#093143',accent:'#a17f48',text:'#093143','primary-soft':'#e8f2f5'};
     let selectedBlock = null, activeEditor = null, draggingBlock = null;
 
     const templates = {
         hero: '<div style="margin:0 0 18px;padding:36px 28px;background:#073b4c;color:#fff;text-align:center"><p style="margin:0 0 8px;color:#fff;font-family:Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase" contenteditable="true">Sefar Universal</p><h1 style="margin:0;color:#fff;font-family:Arial,sans-serif;font-size:30px;line-height:1.2" contenteditable="true">Un mensaje importante para ti</h1></div>',
         heading: '<h2 style="margin:18px 0 10px;color:#073b4c;font-family:Arial,sans-serif;font-size:25px;line-height:1.25" contenteditable="true">Escribe un título</h2>',
         text: '<p style="margin:0 0 16px;color:#35424b;font-family:Arial,sans-serif;font-size:16px;line-height:1.65" contenteditable="true">Escribe aquí el contenido de tu correo. Puedes seleccionarlo, modificarlo y añadir variables de personalización.</p>',
-        button: '<p style="margin:22px 0;text-align:center"><a href="https://example.com" style="display:inline-block;padding:13px 24px;border-radius:4px;background:#e5a326;color:#fff;font-family:Arial,sans-serif;font-size:16px;font-weight:700;text-decoration:none" contenteditable="true">Conocer más</a></p>',
+        button: '<p style="margin:22px 0;text-align:center"><a class="sefar-email-action" href="https://example.com" style="display:inline-block;padding:13px 24px;border-radius:4px;background:#e5a326;color:#fff;font-family:Arial,sans-serif;font-size:16px;font-weight:700;text-decoration:none" contenteditable="true">Conocer más</a></p>',
         image: '<p style="margin:20px 0;text-align:center"><img src="https://placehold.co/640x280/f4f7f8/52636c?text=Selecciona+una+imagen" alt="Imagen de la campaña" style="display:block;max-width:100%;height:auto;margin:0 auto;border:0"></p>',
-        columns: '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;border-collapse:collapse"><tbody><tr><td width="50%" style="padding:14px;vertical-align:top;background:#f4f7f8"><h3 style="margin:0 0 8px;color:#073b4c;font-family:Arial,sans-serif;font-size:18px" contenteditable="true">Primera idea</h3><p style="margin:0;color:#35424b;font-family:Arial,sans-serif;font-size:14px;line-height:1.55" contenteditable="true">Explica aquí un beneficio o una noticia.</p></td><td width="50%" style="padding:14px;vertical-align:top"><h3 style="margin:0 0 8px;color:#073b4c;font-family:Arial,sans-serif;font-size:18px" contenteditable="true">Segunda idea</h3><p style="margin:0;color:#35424b;font-family:Arial,sans-serif;font-size:14px;line-height:1.55" contenteditable="true">Agrega otra información relevante.</p></td></tr></tbody></table>',
+        columns: '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;border-collapse:collapse"><tbody><tr><td class="sefar-email-stack" width="50%" style="padding:14px;vertical-align:top;background:#f4f7f8"><h3 style="margin:0 0 8px;color:#073b4c;font-family:Arial,sans-serif;font-size:18px" contenteditable="true">Primera idea</h3><p style="margin:0;color:#35424b;font-family:Arial,sans-serif;font-size:14px;line-height:1.55" contenteditable="true">Explica aquí un beneficio o una noticia.</p></td><td class="sefar-email-stack" width="50%" style="padding:14px;vertical-align:top"><h3 style="margin:0 0 8px;color:#073b4c;font-family:Arial,sans-serif;font-size:18px" contenteditable="true">Segunda idea</h3><p style="margin:0;color:#35424b;font-family:Arial,sans-serif;font-size:14px;line-height:1.55" contenteditable="true">Agrega otra información relevante.</p></td></tr></tbody></table>',
         highlight: '<div style="margin:20px 0;padding:20px;border-left:4px solid #e5a326;background:#fff8e8"><p style="margin:0;color:#5c4819;font-family:Arial,sans-serif;font-size:17px;line-height:1.55" contenteditable="true">Destaca aquí una fecha, condición o mensaje importante.</p></div>',
         divider: '<div style="margin:24px 0;border-top:1px solid #d9e1e4"></div>',
         spacer: '<div style="height:30px">&nbsp;</div>',
@@ -27,9 +28,15 @@
     };
     const labels = {hero:'Portada',heading:'Título',text:'Texto',button:'Botón',image:'Imagen',columns:'Dos columnas',highlight:'Destacado',divider:'Separador',spacer:'Espacio',footer:'Firma',imported:'HTML importado'};
     const defaults = ['hero', 'heading', 'text', 'button'];
+    Object.keys(templates).forEach((key) => {
+        templates[key] = templates[key].replaceAll('https://example.com', config.appUrl || 'https://app.sefaruniversal.com').replaceAll('#073b4c', theme.primary).replaceAll('#e5a326', theme.accent)
+            .replaceAll('#35424b', theme.text).replaceAll('#fff8e8', theme['primary-soft'])
+            .replaceAll('font-family:Arial,sans-serif', 'font-family:Lato,Arial,sans-serif');
+    });
+    globalTextColor.value = theme.text;
 
     const escapeHtml = (value) => String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
-    const brandMarkup = () => `<div data-sefar-brand-header="true" style="margin:0 0 14px;padding:12px 20px;border-bottom:2px solid #e5a326;background:#ffffff;text-align:center"><img src="${escapeHtml(logoUrl)}" alt="Sefar Universal" width="86" style="display:block;width:86px;max-width:100%;height:auto;margin:0 auto;border:0"></div>`;
+    const brandMarkup = () => `<div data-sefar-brand-header="true" style="margin:0 0 20px;padding:24px;border-top:4px solid ${theme.accent};background:${theme.primary};text-align:left"><img src="${escapeHtml(logoUrl)}" alt="Sefar Universal" width="154" style="display:block;width:154px;max-width:100%;height:auto;border:0"></div>`;
     const makeBrandHeader = () => {
         const header = document.createElement('div');
         header.className = 'template-builder-brand-header';
@@ -93,19 +100,27 @@
     };
     const exportHtml = () => {
         const copy = canvas.cloneNode(true);
-        if (!copy.querySelector('[data-sefar-brand-header]')) copy.insertAdjacentHTML('afterbegin', brandMarkup());
-        copy.querySelectorAll('.template-builder-brand-header').forEach((header) => header.classList.remove('template-builder-brand-header'));
+        copy.querySelectorAll('.template-builder-brand-header,[data-sefar-brand-header]').forEach((header) => header.remove());
         copy.querySelectorAll('.template-builder-block').forEach((block) => {
             block.classList.remove('template-builder-block','is-selected','is-dragging');
             block.removeAttribute('data-block-type');
             block.removeAttribute('draggable');
         });
-        return sanitizeHtml(copy.innerHTML.trim());
+        copy.querySelectorAll('[contenteditable]').forEach((element) => element.removeAttribute('contenteditable'));
+        const body = sanitizeHtml(copy.innerHTML.trim());
+        return config.shell ? config.shell.replace('%%SEFAR_EMAIL_CONTENT%%', body)
+            .replaceAll('%%SEFAR_EMAIL_PREHEADER%%', escapeHtml(document.getElementById('template-preheader').value)) : brandMarkup() + body;
     };
     const importHtml = (html) => {
         const doc = document.implementation.createHTMLDocument('email-template');
         doc.body.innerHTML = sanitizeHtml(html);
+        const preheader = doc.querySelector('[data-sefar-preheader]');
+        if (preheader) document.getElementById('template-preheader').value = preheader.textContent.trim();
+        const slot = doc.querySelector('[data-sefar-email-slot]');
+        if (slot) doc.body.innerHTML = slot.innerHTML;
         doc.querySelectorAll('[data-sefar-brand-header]').forEach((header) => header.remove());
+        doc.querySelectorAll('style,[data-sefar-preheader]').forEach((element) => element.remove());
+        doc.querySelectorAll('h1,h2,h3,h4,p,li,a').forEach((element) => element.setAttribute('contenteditable', 'true'));
         const nodes = [...doc.body.childNodes].filter((node) => node.nodeType === Node.ELEMENT_NODE || node.textContent.trim());
         canvas.innerHTML = '';
         ensureBrandHeader();
@@ -182,6 +197,7 @@
         button.addEventListener('click', () => add(button.dataset.block));
     });
     canvas.addEventListener('click', (event) => {
+        if (event.target.closest('a')) event.preventDefault();
         activeEditor = event.target.closest('[contenteditable="true"]') || activeEditor;
         select(event.target.closest('.template-builder-block'));
     });
@@ -233,10 +249,13 @@
         document.querySelectorAll('[data-device]').forEach((item) => item.classList.remove('active'));
         button.classList.add('active');
         canvas.classList.toggle('is-mobile', button.dataset.device === 'mobile');
+        document.getElementById('template-builder-preview-frame').style.maxWidth = button.dataset.device === 'mobile' ? '375px' : '100%';
+        document.getElementById('template-builder-preview-frame').style.display = 'block';
+        document.getElementById('template-builder-preview-frame').style.margin = '0 auto';
     }));
     document.getElementById('template-builder-preview').addEventListener('click', () => {
         document.getElementById('template-builder-preview-card').classList.remove('d-none');
-        document.getElementById('template-builder-preview-frame').srcdoc = `<!doctype html><html><body style="margin:0;padding:24px;background:#f1f4f6">${exportHtml()}</body></html>`;
+        document.getElementById('template-builder-preview-frame').srcdoc = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f7f9">${exportHtml()}</body></html>`;
     });
     document.querySelector('[data-dismiss-preview]').addEventListener('click', () => document.getElementById('template-builder-preview-card').classList.add('d-none'));
     document.getElementById('template-builder-reset').addEventListener('click', () => {
@@ -247,6 +266,48 @@
         source.value = '';
     });
     document.getElementById('template-builder-load-source').addEventListener('click', () => importHtml(source.value));
+    const systemPrompt = document.getElementById('ai-template-system-prompt');
+    const promptStatus = document.getElementById('ai-template-prompt-status');
+    systemPrompt.addEventListener('input', () => { promptStatus.textContent = 'Cambios sin guardar. Se usarán en el próximo borrador.'; });
+    document.getElementById('ai-template-reset-prompt').addEventListener('click', () => {
+        systemPrompt.value = config.defaultPrompt;
+        promptStatus.textContent = 'Prompt inicial restaurado. Pulsa Guardar prompt para conservarlo.';
+    });
+    document.getElementById('ai-template-save-prompt').addEventListener('click', async (event) => {
+        if (!systemPrompt.reportValidity()) return;
+        const button = event.currentTarget;
+        button.disabled = true;
+        promptStatus.textContent = 'Guardando prompt…';
+        try {
+            const response = await fetch(config.savePromptUrl, {method:'PUT', headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':config.csrfToken},
+                body:JSON.stringify({system_prompt:systemPrompt.value.trim()})});
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(Object.values(result.errors || {}).flat()[0] || 'No se pudo guardar el prompt.');
+            promptStatus.textContent = result.message;
+        } catch (error) { promptStatus.textContent = error.message; }
+        finally { button.disabled = false; }
+    });
+    document.getElementById('ai-template-generate').addEventListener('click', async (event) => {
+        const button = event.currentTarget;
+        const status = document.getElementById('ai-template-status');
+        const prompt = document.getElementById('ai-template-prompt').value.trim();
+        if (prompt.length < 10) { status.textContent = 'Describe el objetivo del correo con al menos 10 caracteres.'; return; }
+        if (!systemPrompt.reportValidity()) return;
+        button.disabled = true;
+        status.textContent = 'Creando tu diseño y redactando el mensaje…';
+        try {
+            const response = await fetch(config.generateUrl, {method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':config.csrfToken},
+                body:JSON.stringify({prompt,system_prompt:systemPrompt.value.trim(),action_url:document.getElementById('ai-template-url').value.trim() || null})});
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(Object.values(result.errors || {}).flat()[0] || 'No se pudo generar el correo. Inténtalo de nuevo.');
+            importHtml(result.body_html);
+            document.getElementById('template-name').value = result.name;
+            document.getElementById('template-subject').value = result.subject;
+            document.getElementById('template-preheader').value = result.preheader;
+            status.textContent = 'Diseño listo. Edita los textos, revisa escritorio y móvil y guarda la plantilla.';
+        } catch (error) { status.textContent = error.message; }
+        finally { button.disabled = false; }
+    });
     form.addEventListener('submit', (event) => {
         output.value = exportHtml();
         if (!output.value) {

@@ -27,9 +27,9 @@
                     </table>
                 </div>
             @else
-                <p class="text-muted">Abre la ficha del cliente para generar la conciliación. Después vuelve a esta ventana. Los informes se conservan durante 24 horas.</p>
+                <p class="text-muted">Abre la ficha del representado para generar la conciliación. Después vuelve a esta ventana. Los informes se conservan durante 24 horas.</p>
             @endif
-            <a class="btn sefar-button cfrSefar" href="{{ route('crud.users.edit', $user) }}#mystatus" target="_blank" rel="noopener noreferrer">Abrir ficha del cliente <i class="fas fa-external-link-alt ml-1" aria-hidden="true"></i></a>
+            <a class="btn sefar-button cfrSefar" href="{{ route('crud.users.edit', $user) }}#mystatus" target="_blank" rel="noopener noreferrer">Abrir ficha del representado <i class="fas fa-external-link-alt ml-1" aria-hidden="true"></i></a>
         </div>
     </div>
 @stop

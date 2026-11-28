@@ -12,7 +12,7 @@ class HubspotSyncAll extends Command
 {
     protected $signature = 'hubspot:sync-all
         {--dry-run            : Solo muestra cambios, no escribe en BD}
-        {--match=hs_id        : Modo de coincidencia para clientes: hs_id|email (email solo diagnóstico)}
+        {--match=hs_id        : Modo de coincidencia para representados: hs_id|email (email solo diagnóstico)}
         {--chunk=500          : Chunk para updates locales}
         {--limit=100          : Page size HubSpot contacts (max 100)}
         {--only-owner=        : Solo procesa un hubspot_owner_id específico}
@@ -21,7 +21,7 @@ class HubspotSyncAll extends Command
         {--show-unmatched     : Muestra owners y contactos sin par en BD}
         {--export-unmatched=  : Exporta unmatched a CSV (ruta relativa a storage/app)}
         {--skip-owner-sync    : Salta el paso 1 (sync de hubspot_owner_id en asesores)}
-        {--skip-client-sync   : Salta el paso 2 (sync de owner_id en clientes)}
+        {--skip-client-sync   : Salta el paso 2 (sync de owner_id en representados)}
         {--owners-only        : Solo lista owners de HubSpot y termina}
         {--interactive-owners : Modo interactivo para mapear HS owners -> user_id y resolver duplicados}
         {--owners-map=exports/hubspot/owners_map.json : Ruta del mapa JSON en storage/app}
@@ -31,7 +31,7 @@ class HubspotSyncAll extends Command
     protected $description = '
         [Paso 0] (Opcional) Listar owners / modo interactivo para mapear owners y resolver duplicados.
         [Paso 1] Sincroniza HubSpot Owners → users.hubspot_owner_id (por cruce explícito de IDs).
-        [Paso 2] Por cada asesor, trae sus contactos de HubSpot y asigna users.owner_id a los clientes matcheados.
+        [Paso 2] Por cada asesor, trae sus contactos de HubSpot y asigna users.owner_id a los representados matcheados.
         Detecta conflictos (mismo owner_id en múltiples asesores) y owners/contactos sin par en BD.
     ';
 
@@ -343,7 +343,7 @@ class HubspotSyncAll extends Command
     private function step2SyncClientOwners(): void
     {
         $this->info("\n══════════════════════════════════════════");
-        $this->info(" PASO 2 — Sync clientes (owner_id) desde contactos HubSpot");
+        $this->info(" PASO 2 — Sync representados (owner_id) desde contactos HubSpot");
         $this->info("══════════════════════════════════════════");
 
         $onlyOwner  = $this->option('only-owner');
@@ -933,7 +933,7 @@ class HubspotSyncAll extends Command
             ['Owners HS sin par en BD',        count($r['owners_unmatched'])],
             ['Conflictos owner_id duplicado',  count($r['owner_id_conflicts'])],
             ['Contactos HS leídos',            $r['contacts_fetched']],
-            ['Clientes matcheados',            $r['clients_matched']],
+            ['Representados matcheados',            $r['clients_matched']],
             ['users.owner_id actualizados',    $r['clients_updated']],
             ['Contactos HS sin par en BD',     count($r['contacts_unmatched'])],
         ]);

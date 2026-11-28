@@ -22,6 +22,7 @@ class MarketingCampaignRandomPreviewTest extends TestCase
     public function test_an_administrator_can_preview_all_standard_variables_with_a_random_app_user(): void
     {
         $admin = User::factory()->create();
+        $admin->syncRoles([Role::findOrCreate('Administrador')]);
         $admin->givePermissionTo(Permission::findOrCreate('administrador'));
 
         User::factory()->create([

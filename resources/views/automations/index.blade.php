@@ -63,7 +63,7 @@
     <div class="card card-outline card-secondary">
         <div class="card-header"><h3 class="card-title">Últimas ejecuciones</h3></div>
         <div class="card-body p-0 table-responsive">
-            <table class="table table-sm mb-0"><thead><tr><th>Fecha</th><th>Regla</th><th>Acción</th><th>Cliente</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>
+            <table class="table table-sm mb-0"><thead><tr><th>Fecha</th><th>Regla</th><th>Acción</th><th>Representado</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>
                 @forelse($recentRuns as $run)
                     <tr><td>{{ optional($run->created_at)->format('d/m/Y H:i') }}</td><td>{{ $run->rule?->name }}</td><td>{{ $run->action?->action_type }}</td><td>{{ $run->entity_id ?: '—' }}</td><td>{{ $run->status }}</td><td><small>{{ $run->error_message ?: data_get($run->result, 'reason', '') }}</small></td></tr>
                 @empty

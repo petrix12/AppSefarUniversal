@@ -20,14 +20,14 @@
         {{-- ── CLIENTE ──────────────────────────────────────────────────── --}}
         <div class="col-md-6">
             <div class="card card-primary card-outline">
-                <div class="card-header"><h3 class="card-title">Datos del cliente</h3></div>
+                <div class="card-header"><h3 class="card-title">Datos del representado</h3></div>
                 <div class="card-body">
 
                     <div class="form-group">
                         <label>Buscar usuario existente</label>
                         <select id="user-selector" name="customer_user_id"
                                 class="form-control" style="width:100%">
-                            <option value="">— Seleccionar cliente —</option>
+                            <option value="">— Seleccionar representado —</option>
                         </select>
                         <small class="text-muted">Al seleccionar, se rellenan los campos automáticamente.</small>
                     </div>
@@ -54,7 +54,7 @@
                                value="{{ old('customer_vat') }}" class="form-control">
                         <small id="vat-missing" class="text-warning d-none">
                             <i class="fas fa-exclamation-triangle"></i>
-                            El cliente no tiene pasaporte registrado.
+                            El representado no tiene pasaporte registrado.
                         </small>
                     </div>
 
@@ -64,7 +64,7 @@
                                value="{{ old('customer_address') }}" class="form-control">
                         <small id="address-missing" class="text-warning d-none">
                             <i class="fas fa-exclamation-triangle"></i>
-                            Este campo no estaba en el perfil del cliente.
+                            Este campo no estaba en el perfil del representado.
                         </small>
                     </div>
 
@@ -74,7 +74,7 @@
                                value="{{ old('customer_country') }}" class="form-control">
                         <small id="country-missing" class="text-warning d-none">
                             <i class="fas fa-exclamation-triangle"></i>
-                            Este campo no estaba en el perfil del cliente.
+                            Este campo no estaba en el perfil del representado.
                         </small>
                     </div>
 
@@ -222,10 +222,10 @@
                 <div class="card-body">
 
                     <div class="form-group">
-                        <label>No. Depósito Cliente</label>
+                        <label>No. Depósito Representado</label>
                         <input type="text" name="deposit_number_client"
                                value="{{ old('deposit_number_client') }}"
-                               class="form-control" placeholder="Número de depósito del cliente">
+                               class="form-control" placeholder="Número de depósito del representado">
                     </div>
 
                     <div class="form-group">
@@ -414,7 +414,7 @@ $(document).ready(function() {
             $('#vat-missing').toggleClass('d-none',     !data.missing.passport);
             $('#address-missing').toggleClass('d-none', !data.missing.address);
             $('#country-missing').toggleClass('d-none', !data.missing.pais_de_residencia);
-        }).fail(function() { toastr.error('No se pudo obtener los datos del cliente.'); });
+        }).fail(function() { toastr.error('No se pudo obtener los datos del representado.'); });
     });
 
     $('#user-selector').on('select2:clear', function() {

@@ -43,7 +43,7 @@ class ClientBlockPropagationService
 
     private function hubspot(User $user, bool $blocked, array $config): void
     {
-        throw_if(blank($user->hs_id), \RuntimeException::class, 'Cliente sin ID de HubSpot; requiere vinculación.');
+        throw_if(blank($user->hs_id), \RuntimeException::class, 'Representado sin ID de HubSpot; requiere vinculación.');
         app(HubspotService::class)->updateContact($user->hs_id, [$config['property'] => $blocked ? 'true' : 'false']);
     }
 
@@ -54,7 +54,7 @@ class ClientBlockPropagationService
             $ids = $ids->merge(\App\Models\MondayServiceRegistration::where('user_id', $user->id)->pluck('monday_item_id'));
         }
         $ids = $ids->filter()->unique();
-        throw_if($ids->isEmpty(), \RuntimeException::class, 'Cliente sin elementos vinculados de Monday.');
+        throw_if($ids->isEmpty(), \RuntimeException::class, 'Representado sin elementos vinculados de Monday.');
         $api = app(MondayApiClient::class);
         foreach ($ids as $id) {
             $item = $api->item((string) $id);
@@ -72,7 +72,7 @@ class ClientBlockPropagationService
 
     private function teamleader(User $user, bool $blocked, array $config): void
     {
-        throw_if(blank($user->tl_id), \RuntimeException::class, 'Cliente sin ID de Teamleader; requiere vinculación.');
+        throw_if(blank($user->tl_id), \RuntimeException::class, 'Representado sin ID de Teamleader; requiere vinculación.');
         app(TeamleaderService::class)->setClientDeliveryBlockTag((string) $user->tl_id, $config['tag'], $blocked);
     }
 }

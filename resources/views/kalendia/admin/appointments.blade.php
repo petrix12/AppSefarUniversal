@@ -8,7 +8,7 @@
     @include('kalendia.partials.messages')
     <div class="card"><div class="card-body">
         @include('kalendia.partials.timezone')
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3"><h2 class="h5">{{ $client ? 'Reuniones de '.$client->name : 'Reuniones de clientes' }}</h2>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3"><h2 class="h5">{{ $client ? 'Reuniones de '.$client->name : 'Reuniones de representados' }}</h2>
             <form method="POST" action="{{ route('admin.kalendia.refresh') }}">@csrf<button class="btn btn-outline-primary" type="submit"><i class="fas fa-sync-alt mr-1" aria-hidden="true"></i>Actualizar desde Kalendia</button></form>
         </div>
         <form method="GET" class="row mb-3" id="kalendia-calendar-filters">

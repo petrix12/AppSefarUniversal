@@ -14,7 +14,7 @@
                     <div>
                         <div class="family-group-eyebrow">Grupo familiar</div>
                         <h1 class="family-group-title">{{ $familyGroup->name }}</h1>
-                        <p>IDCliente base: {{ $familyGroup->primary_id_cliente ?: 'Sin cliente base' }}</p>
+                        <p>IDCliente base: {{ $familyGroup->primary_id_cliente ?: 'Sin representado base' }}</p>
                     </div>
                     <div class="family-group-header-actions">
                         <a href="{{ route('family-groups.index') }}">Volver</a>
@@ -31,7 +31,7 @@
 
                 <div class="family-group-panels">
                     <section class="family-group-panel">
-                        <div class="family-group-panel-title">Agregar cliente al grupo</div>
+                        <div class="family-group-panel-title">Agregar representado al grupo</div>
                         <form method="POST" action="{{ route('family-groups.members.store', $familyGroup) }}" class="family-inline-form">
                             @csrf
                             <input type="text" name="IDCliente" value="{{ old('IDCliente') }}" placeholder="IDCliente / pasaporte">
@@ -55,14 +55,14 @@
                 <section class="family-group-section">
                     <div class="family-group-section-header">
                         <h2>Miembros del grupo</h2>
-                        <span>{{ $familyGroup->members->count() }} cliente(s)</span>
+                        <span>{{ $familyGroup->members->count() }} representado(s)</span>
                     </div>
 
                     <div class="family-group-table-wrap">
                         <table class="family-group-table">
                             <thead>
                                 <tr>
-                                    <th>Cliente</th>
+                                    <th>Representado</th>
                                     <th>Origen</th>
                                     <th>Confianza</th>
                                     <th>Evidencia</th>
@@ -101,7 +101,7 @@
                                         </td>
                                         <td class="family-member-actions">
                                             <a href="{{ route('arboles.tree.index', $member->IDCliente) }}" target="_blank">Arbol</a>
-                                            <form action="{{ route('family-groups.members.destroy', [$familyGroup, $member]) }}" method="POST" onsubmit="return confirm('¿Sacar este cliente del grupo familiar?')">
+                                            <form action="{{ route('family-groups.members.destroy', [$familyGroup, $member]) }}" method="POST" onsubmit="return confirm('¿Sacar este representado del grupo familiar?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit">Sacar</button>

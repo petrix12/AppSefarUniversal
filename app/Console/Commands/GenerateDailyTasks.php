@@ -298,7 +298,7 @@ class GenerateDailyTasks extends Command
                     $task = Task::create([
                         'user_id'            => $advisor->id,
                         'contact_id'         => $contact->contact_id,
-                        'title'              => "Comunicarse con el cliente {$contact->contact_name} [Lista: {$contact->list_name}]",
+                        'title'              => "Comunicarse con el representado {$contact->contact_name} [Lista: {$contact->list_name}]",
                         'description' => $this->taskDescriptionForGeneratedContact(
                             $contact,
                             $ownerChanged,

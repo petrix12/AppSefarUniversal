@@ -24,8 +24,8 @@
         </div>
     </section>
     <div class="card"><div class="card-body">
-        <h2 class="h5">Clientes y leads</h2>
-        <p>Se importa el perfil del contacto cuando tiene al menos un negocio en el proveedor correspondiente, incluidos negocios cerrados o perdidos. Un proyecto o una factura por sí solos no lo convierten en cliente. No se crean cuentas de acceso automáticamente.</p>
+        <h2 class="h5">Representados y leads</h2>
+        <p>Se importa el perfil del contacto cuando tiene al menos un negocio en el proveedor correspondiente, incluidos negocios cerrados o perdidos. Un proyecto o una factura por sí solos no lo convierten en representado. No se crean cuentas de acceso automáticamente.</p>
         <p>Los contactos sin negocios quedan fuera de la actualización de perfiles. Se conserva su historial anterior.</p>
         <p>Tablas: <strong>{{ $installed ? 'Instaladas' : 'Pendiente de migración' }}</strong> · COS desde datos locales: <strong>{{ \App\Services\CrmContactMirrorService::localReadsEnabled() ? 'Activado' : 'Desactivado' }}</strong></p>
         <p>Procesamiento general de eventos <strong>{{ config('crm_sync.processing_enabled') ? 'Activado' : 'Pausado' }}</strong>.</p>

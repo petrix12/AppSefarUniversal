@@ -1,11 +1,5 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>Error de producción {{ $report['reference'] }}</title>
-</head>
-<body style="font-family: Arial, sans-serif; color: #202124; line-height: 1.45;">
-    <h2>Error interno en {{ config('app.name') }}</h2>
+@component('mail.layouts.base', ['title' => 'Aviso de producción'])
+<h2>Error interno en {{ config('app.name') }}</h2>
     <p><strong>Referencia:</strong> {{ $report['reference'] }}</p>
     <p><strong>Fecha:</strong> {{ $report['occurred_at']->format('d/m/Y H:i:s T') }}</p>
     <p><strong>Resultado del servidor:</strong> HTTP {{ $report['response']['status_code'] }} ({{ $report['response']['content_type'] ?: 'sin content-type' }})</p>
@@ -37,5 +31,4 @@
 
     <h3>Traza</h3>
     <pre style="white-space: pre-wrap; background: #f5f5f5; padding: 12px;">{{ $report['exception']['trace'] }}</pre>
-</body>
-</html>
+@endcomponent

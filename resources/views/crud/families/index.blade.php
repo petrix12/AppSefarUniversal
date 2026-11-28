@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Clientes familiares de clientes')
+@section('title', 'Representados familiares de representados')
 
 @section('content_header')
 

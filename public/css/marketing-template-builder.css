@@ -1,0 +1,17 @@
+.template-builder-blocks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
+.template-builder-palette{display:flex;min-height:74px;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;border:1px solid var(--sefar-border);border-radius:var(--sefar-radius);background:var(--sefar-surface);color:var(--sefar-text);cursor:grab;font-size:.8rem;transition:all .15s}
+.template-builder-palette:hover,.template-builder-palette:focus{border-color:var(--sefar-accent);box-shadow:0 0 0 .15rem var(--sefar-primary-soft);color:var(--sefar-accent);outline:0}
+.template-builder-palette i{font-size:1.25rem}
+.template-builder-variables{display:flex;flex-wrap:wrap;gap:.45rem}
+.template-builder-workspace{overflow:auto;padding:1.5rem;background:var(--sefar-page)}
+.template-builder-dropzone{width:100%;max-width:640px;min-height:560px;margin:0 auto;padding:1rem;border-radius:8px;background:#fff;color:#093143;box-shadow:var(--sefar-shadow);transition:width .2s}
+.template-builder-dropzone.is-mobile{width:375px;max-width:100%}
+.template-builder-block{position:relative;min-height:30px;border:1px solid transparent;cursor:move}
+.template-builder-block:hover{border-color:var(--sefar-accent-light)}
+.template-builder-block.is-selected{border-color:var(--sefar-accent);box-shadow:0 0 0 2px var(--sefar-primary-soft)}
+.template-builder-block.is-dragging{opacity:.45}
+.template-builder-block:before{position:absolute;z-index:3;top:4px;left:4px;display:none;padding:2px 5px;border-radius:3px;background:#093143;color:#fff;content:"Arrastrar";font:700 10px Lato,Arial,sans-serif;pointer-events:none}
+.template-builder-block:hover:before,.template-builder-block.is-selected:before{display:block}
+.template-builder-inspector-label{font-size:.78rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.template-builder-preview-frame{display:block;width:100%;min-height:580px;margin:0 auto;border:0;border-radius:8px;background:#fff}
+@media(max-width:575.98px){.template-builder-toolbar{display:flex;flex-direction:column;gap:.75rem}.template-builder-toolbar .card-tools{float:none}.template-builder-workspace{padding:.7rem}.template-builder-dropzone{padding:.75rem}}

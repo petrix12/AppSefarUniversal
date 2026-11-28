@@ -14,7 +14,7 @@
             </p>
         </div>
         <a href="{{ route('crud.users.edit', $client) }}" class="btn btn-outline-secondary mt-2">
-            Volver a la ficha del cliente
+            Volver a la ficha del representado
         </a>
     </div>
 @stop
@@ -38,7 +38,7 @@
                         <textarea id="client-note" name="note" rows="8"
                                   class="form-control @error('note') is-invalid @enderror"
                                   maxlength="{{ \App\Models\ClientNote::MAX_LENGTH }}"
-                                  placeholder="Escribe una nota sobre este cliente..." required>{{ old('note') }}</textarea>
+                                  placeholder="Escribe una nota sobre este representado..." required>{{ old('note') }}</textarea>
                         @error('note')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -51,7 +51,7 @@
         </div>
 
         <div class="col-lg-8">
-            <h2 class="h5 mb-3">Notas del cliente <span class="badge badge-secondary">{{ $notes->total() }}</span></h2>
+            <h2 class="h5 mb-3">Notas del representado <span class="badge badge-secondary">{{ $notes->total() }}</span></h2>
             @forelse($notes as $note)
                 <article class="card">
                     <div class="card-header d-flex justify-content-between flex-wrap">
@@ -61,7 +61,7 @@
                         </time>
                         @can('client-notes.delete')
                             <form method="POST" action="{{ route('crud.users.notes.destroy', [$client, $note]) }}" class="ml-auto"
-                                  onsubmit="return confirm('¿Eliminar esta nota del cliente?')">
+                                  onsubmit="return confirm('¿Eliminar esta nota del representado?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Eliminar nota {{ $note->id }}">
                                     <i class="fas fa-trash-alt mr-1" aria-hidden="true"></i>Eliminar
@@ -73,7 +73,7 @@
                 </article>
             @empty
                 <div class="card">
-                    <div class="card-body text-muted">Aún no hay notas para este cliente.</div>
+                    <div class="card-body text-muted">Aún no hay notas para este representado.</div>
                 </div>
             @endforelse
 

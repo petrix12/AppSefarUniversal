@@ -79,7 +79,7 @@ class BackfillUnifiedExternalLinks extends Command
 
                         if (! $client) {
                             $stats['conflicts']++;
-                            $this->warn("Registro Monday {$registration->id}: el cliente ya no existe.");
+                            $this->warn("Registro Monday {$registration->id}: el representado ya no existe.");
                             continue;
                         }
 

@@ -85,8 +85,8 @@ class ExternalClientImportController extends Controller
             ->with(
                 'success',
                 $existingUser
-                    ? 'El cliente ya existia en la App. Se vincularon/actualizaron los datos disponibles.'
-                    : 'Cliente migrado a la App correctamente. No se envio correo automatico al cliente.'
+                    ? 'El representado ya existia en la App. Se vincularon/actualizaron los datos disponibles.'
+                    : 'Representado migrado a la App correctamente. No se envio correo automatico al representado.'
             );
     }
 
@@ -150,7 +150,7 @@ class ExternalClientImportController extends Controller
         $props = $contact['properties'] ?? [];
         $firstName = $this->value($props, ['firstname', 'nombres']);
         $lastName = $this->value($props, ['lastname', 'apellidos']);
-        $name = trim("{$firstName} {$lastName}") ?: $this->value($props, ['name', 'nombre']) ?: 'Cliente HubSpot ' . $contact['id'];
+        $name = trim("{$firstName} {$lastName}") ?: $this->value($props, ['name', 'nombre']) ?: 'Representado HubSpot ' . $contact['id'];
 
         return [
             'source' => 'hubspot',
@@ -175,7 +175,7 @@ class ExternalClientImportController extends Controller
     {
         $firstName = $contact['first_name'] ?? null;
         $lastName = $contact['last_name'] ?? null;
-        $name = trim("{$firstName} {$lastName}") ?: 'Cliente Teamleader ' . ($contact['id'] ?? '');
+        $name = trim("{$firstName} {$lastName}") ?: 'Representado Teamleader ' . ($contact['id'] ?? '');
 
         return [
             'source' => 'teamleader',

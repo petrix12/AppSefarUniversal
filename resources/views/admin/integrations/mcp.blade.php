@@ -82,7 +82,7 @@
             <div class="card card-outline card-primary">
                 <div class="card-header">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-desktop mr-1"></i> Configurar clientes IA
+                        <i class="fas fa-desktop mr-1"></i> Configurar aplicaciones de IA
                     </h3>
                 </div>
                 <div class="card-body">
@@ -608,7 +608,7 @@ tool_timeout_sec = 120</pre>
                 };
 
                 if (! configs[kind]) {
-                    throw new Error('Cliente IA no soportado.');
+                    throw new Error('Aplicación de IA no soportada.');
                 }
 
                 return configs[kind];

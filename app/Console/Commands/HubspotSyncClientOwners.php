@@ -19,7 +19,7 @@ class HubspotSyncClientOwners extends Command
         {--match=hs_id : match mode: hs_id|email (email solo diagnóstico)}
     ';
 
-    protected $description = 'Asigna users.owner_id a cada cliente según el hubspot_owner_id del contacto en HubSpot, usando el mapeo hubspot_owner_user';
+    protected $description = 'Asigna users.owner_id a cada representado según el hubspot_owner_id del contacto en HubSpot, usando el mapeo hubspot_owner_user';
 
     public function handle(): int
     {
@@ -216,7 +216,7 @@ class HubspotSyncClientOwners extends Command
         }
 
         $this->info("Contactos HubSpot leídos: {$totalContacts}");
-        $this->info("Clientes matcheados en users: {$totalMatchedClients}");
+        $this->info("Representados matcheados en users: {$totalMatchedClients}");
         $this->info("Updates aplicados: {$totalUpdates}" . ($dryRun ? " (dry-run)" : ""));
 
         return self::SUCCESS;

@@ -10,10 +10,10 @@
     @if(session('success'))
         <div class="alert alert-success" role="status">{{ session('success') }}</div>
     @endif
-    <p class="text-muted">Listado global de clientes con los datos importados disponibles. Actualizado al calcular este informe: {{ $report['generated_at'] }}.</p>
+    <p class="text-muted">Listado global de representados con los datos importados disponibles. Actualizado al calcular este informe: {{ $report['generated_at'] }}.</p>
     <div class="row">
         @foreach([
-            'clients' => 'Clientes', 'with_known_debt' => 'Con saldo conocido',
+            'clients' => 'Representados', 'with_known_debt' => 'Con saldo conocido',
             'with_certificate_and_known_debt' => 'Con certificado y saldo', 'requiring_review' => 'Requieren revisión'
         ] as $key => $label)
             <div class="col-6 col-lg-3 mb-3">
@@ -42,11 +42,11 @@
                     @endforeach
                 </select>
             </div>
-            <div class="form-group col-md-4"><label for="portfolio-search">Cliente, pasaporte o correo</label><input id="portfolio-search" name="q" value="{{ $filters['q'] }}" class="form-control"></div>
+            <div class="form-group col-md-4"><label for="portfolio-search">Representado, pasaporte o correo</label><input id="portfolio-search" name="q" value="{{ $filters['q'] }}" class="form-control"></div>
             <div class="form-group col-md-2"><button class="btn sefar-button cfrSefar btn-block">Filtrar</button></div>
         </form>
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3" style="gap: .75rem">
-            <span>{{ number_format($clients->total(), 0, ',', '.') }} clientes encontrados</span>
+            <span>{{ number_format($clients->total(), 0, ',', '.') }} representados encontrados</span>
             <div class="d-flex flex-wrap" style="gap: .5rem">
                 <a class="btn sefar-button cfrSefar" href="{{ route('crud.cos.portfolio', ['certificate' => 'yes', 'balance' => 'debt']) }}">Con certificado y saldo pendiente</a>
                 <a class="btn sefar-button cfrSefar" href="{{ route('crud.cos.portfolio', array_merge($filters, ['export' => 'csv'])) }}">Descargar lista completa CSV</a>
@@ -54,7 +54,7 @@
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
-                <thead><tr><th>Cliente</th><th>Certificado</th><th class="text-right">Saldo conocido</th><th>Estado y expedientes</th></tr></thead>
+                <thead><tr><th>Representado</th><th>Certificado</th><th class="text-right">Saldo conocido</th><th>Estado y expedientes</th></tr></thead>
                 <tbody>
                     @forelse($clients as $client)
                         <tr>
@@ -72,12 +72,12 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="text-center text-muted py-4">No hay clientes con estos filtros.</td></tr>
+                        <tr><td colspan="4" class="text-center text-muted py-4">No hay representados con estos filtros.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
         {{ $clients->links() }}
     </div></div>
-    <p class="text-muted">Para agrupar negocios de HubSpot con proyectos de Teamleader, abre el cliente y utiliza «Procesos del solicitante» en su ventana de estatus.</p>
+    <p class="text-muted">Para agrupar negocios de HubSpot con proyectos de Teamleader, abre el representado y utiliza «Procesos del solicitante» en su ventana de estatus.</p>
 @stop

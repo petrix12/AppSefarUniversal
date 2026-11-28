@@ -1,21 +1,11 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Solicitud de soporte</title>
-</head>
-<body style="margin:0; padding:0; background:#f3f4f6; font-family:Arial, Helvetica, sans-serif; color:#111827;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6; padding:24px 12px;">
-        <tr>
-            <td align="center">
-                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px; background:#ffffff; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
-                    <tr>
-                        <td style="background:#0f766e; padding:22px 26px; color:#ffffff;">
+@component('mail.layouts.base', ['contentRows' => true])
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr>
+                        <td style="background:#093143; padding:22px 26px; color:#ffffff;">
                             <div style="font-size:12px; line-height:18px; text-transform:uppercase; letter-spacing:.08em; opacity:.9;">
                                 App Sefar
                             </div>
-                            <h1 style="margin:6px 0 0; font-size:24px; line-height:32px; font-weight:700;">
+                            <h1 style="margin:6px 0 0; font-size:24px; line-height:32px; font-weight:700; color:#ffffff;">
                                 {{ $isTest ? 'Solicitud de soporte - PRUEBA' : 'Solicitud de soporte' }}
                             </h1>
                         </td>
@@ -24,7 +14,7 @@
                     <tr>
                         <td style="padding:24px 26px 8px;">
                             <p style="margin:0 0 16px; font-size:15px; line-height:23px; color:#374151;">
-                                Se registro una solicitud desde la plataforma. El correo del cliente queda destacado abajo para responderle o ubicar su contacto.
+                                Se registro una solicitud desde la plataforma. El correo del representado queda destacado abajo para responderle o ubicar su contacto.
                             </p>
 
                             @if(! empty($ticket['id']))
@@ -44,7 +34,7 @@
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb; border-radius:6px; overflow:hidden;">
                                 <tr>
                                     <td colspan="2" style="padding:12px 14px; background:#f9fafb; border-bottom:1px solid #e5e7eb; font-size:13px; font-weight:700; color:#111827;">
-                                        Cliente
+                                        Representado
                                     </td>
                                 </tr>
                                 <tr>
@@ -52,7 +42,7 @@
                                     <td style="padding:10px 14px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#111827;">{{ $clientName }}</td>
                                 </tr>
                                 <tr>
-                                    <td style="width:34%; padding:10px 14px; border-bottom:1px solid #f3f4f6; font-size:13px; color:#6b7280;">Correo del cliente</td>
+                                    <td style="width:34%; padding:10px 14px; border-bottom:1px solid #f3f4f6; font-size:13px; color:#6b7280;">Correo del representado</td>
                                     <td style="padding:10px 14px; border-bottom:1px solid #f3f4f6; font-size:14px; color:#111827;">
                                         <a href="mailto:{{ $clientEmail }}" style="color:#0f766e; font-weight:700; text-decoration:none;">{{ $clientEmail }}</a>
                                     </td>
@@ -130,12 +120,8 @@
 
                     <tr>
                         <td style="padding:16px 26px; background:#f9fafb; border-top:1px solid #e5e7eb; font-size:12px; line-height:18px; color:#6b7280;">
-                            Mensaje generado automaticamente por App Sefar. Para responder al cliente, usa el correo {{ $clientEmail }}.
+                            Mensaje generado automaticamente por App Sefar. Para responder al representado, usa el correo {{ $clientEmail }}.
                         </td>
                     </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
+</table>
+@endcomponent

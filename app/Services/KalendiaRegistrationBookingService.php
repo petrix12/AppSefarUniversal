@@ -149,7 +149,7 @@ class KalendiaRegistrationBookingService
                 'notes' => 'Reunión incluida en el servicio contratado. Pago confirmado en la App: '.$amount.' '.$currency
                     .'. Factura App #'.$purchase->factura->id.'. Compra #'.$purchase->id.'. Referencia: '.$reference
                     .'. Comprobante: '.url('/viewcomprobante/'.$purchase->factura->id)
-                    .'. Horario del cliente: '.$data['date'].' '.$slot['display_time'].' ('.$timezone.').',
+                    .'. Horario del representado: '.$data['date'].' '.$slot['display_time'].' ('.$timezone.').',
             ]];
             if ($slot['staff_id']) $payload['appointment']['staff_id'] = $slot['staff_id'];
         }
@@ -215,7 +215,7 @@ class KalendiaRegistrationBookingService
                 'last_http_status' => $exception->httpStatus]);
             throw ValidationException::withMessages(['booking' => $rejected
                 ? ($unavailable ? 'Ese horario ya no está disponible. Tu pago se conserva. Consulta la agenda y selecciona otro horario.'
-                    : 'La agenda no pudo aceptar la reserva. Tu pago se conserva; vuelve a consultar los horarios o contacta con atención al cliente.')
+                    : 'La agenda no pudo aceptar la reserva. Tu pago se conserva; vuelve a consultar los horarios o contacta con atención al representado.')
                 : 'Aún no tenemos confirmación de la agenda. Usa «Comprobar reserva» para repetir la misma solicitud sin crear otra cita.']);
         }
         $booking = $booking->fresh();

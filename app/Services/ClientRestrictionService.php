@@ -52,7 +52,7 @@ class ClientRestrictionService
                     $query->orWhereRaw('LOWER(email_2) = ?', [mb_strtolower(trim($email))]);
                 }
             })->whereHas('accessBlock')->exists()) {
-            abort(423, 'No se permite enviar información a un cliente bloqueado.');
+            abort(423, 'No se permite enviar información a un representado bloqueado.');
         }
     }
 
@@ -65,15 +65,15 @@ class ClientRestrictionService
         if ($phone !== '' && Schema::hasTable('user_access_blocks')) {
             $blocked = User::whereHas('accessBlock')->whereNotNull('phone')->get(['id', 'phone']);
             abort_if($blocked->contains(fn ($client) => preg_replace('/\D/', '', (string) $client->phone) === $phone), 423,
-                'No se permite enviar información a un cliente bloqueado.');
+                'No se permite enviar información a un representado bloqueado.');
         }
     }
 
     public function block(User $client, string $reason, ?string $publicExplanation = null,
         string $source = 'manual', ?string $reference = null, ?string $internalNote = null, ?User $actor = null): bool
     {
-        abort_unless(Schema::hasTable('client_restriction_events'), 503, 'Aplica primero la migración de restricciones de clientes.');
-        abort_unless($client->isCliente(), 422, 'El registro debe corresponder a un cliente.');
+        abort_unless(Schema::hasTable('client_restriction_events'), 503, 'Aplica primero la migración de restricciones de representados.');
+        abort_unless($client->isCliente(), 422, 'El registro debe corresponder a un representado.');
 
         return DB::transaction(function () use ($client, $reason, $publicExplanation, $source, $reference, $internalNote, $actor): bool {
             User::whereKey($client->id)->lockForUpdate()->firstOrFail();

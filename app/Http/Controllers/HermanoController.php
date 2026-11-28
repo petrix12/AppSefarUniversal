@@ -40,7 +40,7 @@ class HermanoController extends Controller
         if($sizecheck>0){
 
             if (sizeof($usercheck)>0) {
-                return redirect()->back()->withInput()->with('error', 'El pasaporte ya se encuentra registrado.<br><br>Por favor, comuníquese con atención al cliente para solventar el problema.');
+                return redirect()->back()->withInput()->with('error', 'El pasaporte ya se encuentra registrado.<br><br>Por favor, comuníquese con atención al representado para solventar el problema.');
             }
 
             if (sizeof($usermail)>0) {

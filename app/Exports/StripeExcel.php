@@ -74,6 +74,6 @@ class StripeExcel implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['ID', 'Monto', 'Moneda', 'Cliente', 'Fecha y Hora (Venezuela)', 'Fecha y Hora (España)'];
+        return ['ID', 'Monto', 'Moneda', 'Representado', 'Fecha y Hora (Venezuela)', 'Fecha y Hora (España)'];
     }
 }

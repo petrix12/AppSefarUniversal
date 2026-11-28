@@ -58,7 +58,7 @@ class CosPaymentCrmSyncService
         $user = User::findOrFail($receipt->id_user);
         $invoices = Factura::where('hash_factura', $receipt->hash_factura)->get();
         if ($invoices->count() !== 1 || (int) $invoices->first()->id_cliente !== (int) $user->id) {
-            throw new PaymentSyncReviewException('El comprobante no pertenece inequívocamente al cliente del abono.');
+            throw new PaymentSyncReviewException('El comprobante no pertenece inequívocamente al representado del abono.');
         }
         if ($registration) return $this->registrationContext($receipt, $user, $invoices->first());
         $project = trim((string) data_get($receipt->metadata, 'teamleader_project_id'));
@@ -70,7 +70,7 @@ class CosPaymentCrmSyncService
             ->whereNotNull('hubspot_id')->where('hubspot_id', '!=', '')->get();
         if ($deals->count() !== 1 || ($receipt->deal_id && (int) $receipt->deal_id !== (int) $deals->first()->id)
             || ! $user->hs_id || ! $user->tl_id) {
-            throw new PaymentSyncReviewException('Falta un enlace único entre cliente, negocio de HubSpot y proyecto de Teamleader.');
+            throw new PaymentSyncReviewException('Falta un enlace único entre representado, negocio de HubSpot y proyecto de Teamleader.');
         }
         $deal = $deals->first();
         if (! CosDealPaymentScope::allowsDealPhase($deal->getAttributes(), $phase)) {
@@ -118,7 +118,7 @@ class CosPaymentCrmSyncService
         // It does not import a lead profile or create a deal to force a match.
         $deals = Negocio::where('user_id', $user->id)->whereNotNull('hubspot_id')->where('hubspot_id', '!=', '')->get();
         $deal = $receipt->deal_id ? $deals->firstWhere('id', $receipt->deal_id) : (! $consultation && $deals->count() === 1 ? $deals->first() : null);
-        if ($receipt->deal_id && ! $deal) throw new PaymentSyncReviewException('El negocio del pago de registro no pertenece a ese cliente.');
+        if ($receipt->deal_id && ! $deal) throw new PaymentSyncReviewException('El negocio del pago de registro no pertenece a ese representado.');
         if ($deal && (! ctype_digit((string) $deal->hubspot_id)
             || Negocio::where('user_id', '!=', $user->id)->where('hubspot_id', $deal->hubspot_id)->exists())) {
             throw new PaymentSyncReviewException('El negocio del registro está cruzado con otra cuenta.');

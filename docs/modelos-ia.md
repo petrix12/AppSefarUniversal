@@ -9,9 +9,16 @@ Cada proceso guarda su modelo, respaldos, tiempo máximo y límite de salida en
 de `AiProcessSettingsService`; editar el código o `.env` no reemplaza filas
 guardadas. Al guardar desde el configurador se invalida la caché del proceso.
 
-Los ocho procesos son atención BrightBean, asociación HubSpot/Teamleader,
+Los nueve procesos son generación de correos, atención BrightBean, asociación HubSpot/Teamleader,
 unificación de datos, resúmenes de actividad, clasificación COS, chat interno,
 resúmenes de despliegue y asistentes por rol.
+
+El proceso **Generador de correos** (`email_template_generation`) utiliza por defecto
+45 segundos y 4000 tokens de salida. Su modelo y respaldos se pueden ajustar en
+este configurador. El prompt de marca se revisa, edita y guarda directamente en
+**Marketing → Plantillas**; los cambios sin guardar se aplican al siguiente borrador
+y **Guardar prompt** los conserva para futuras visitas y para el equipo. Las plantillas
+generadas siguen la base de correo de Sefar y se pueden guardar y reabrir para editar.
 
 ## Configuración aplicada el 10 de noviembre de 2026
 

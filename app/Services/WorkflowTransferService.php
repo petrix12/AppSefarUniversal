@@ -29,7 +29,7 @@ class WorkflowTransferService
     ): WorkflowMembership {
         if ($fromMembership->entity_type !== UnifiedClientProfileService::ENTITY_CLIENT
             || (int) $fromMembership->entity_id !== (int) $client->id) {
-            throw new InvalidArgumentException('La membresía de origen no pertenece al cliente indicado.');
+            throw new InvalidArgumentException('La membresía de origen no pertenece al representado indicado.');
         }
 
         if ((int) $targetStage->workflow_board_id !== (int) $targetBoard->id) {

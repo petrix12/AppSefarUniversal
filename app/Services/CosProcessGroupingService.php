@@ -104,7 +104,7 @@ class CosProcessGroupingService
     public function associateManually(User $user, int $dealId, string $projectId, array $context): void
     {
         if (! $context['available_projects']->contains(fn ($project) => (string) $project->id === $projectId)) {
-            throw ValidationException::withMessages(['teamleader_id' => 'El proyecto no está disponible para este cliente.']);
+            throw ValidationException::withMessages(['teamleader_id' => 'El proyecto no está disponible para este representado.']);
         }
         DB::transaction(function () use ($user, $dealId, $projectId) {
             User::whereKey($user->id)->lockForUpdate()->firstOrFail();

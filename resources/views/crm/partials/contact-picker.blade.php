@@ -5,7 +5,7 @@
     <input type="hidden" name="lead_id" id="crm-lead-id" value="{{ old('lead_id', $leadId ?? '') }}">
     <input type="hidden" name="client_id" id="crm-client-id" value="{{ old('client_id', $clientId ?? '') }}">
     <div id="crm-contact-results" class="list-group position-absolute w-100 shadow" style="z-index: 20; display:none"></div>
-    <small class="form-text text-muted">Selecciona un lead activo o un cliente registrado.</small>
+    <small class="form-text text-muted">Selecciona un lead activo o un representado registrado.</small>
     @error('contact_search')<small class="text-danger d-block">{{ $message }}</small>@enderror
     @error('lead_id')<small class="text-danger d-block">{{ $message }}</small>@enderror
     @error('client_id')<small class="text-danger d-block">{{ $message }}</small>@enderror

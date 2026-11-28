@@ -42,7 +42,7 @@ class MarketingQueueScheduleTest extends TestCase
         $this->assertSame('* * * * *', $event->expression);
         $this->assertStringContainsString('queue:work', $event->command);
         $this->assertStringContainsString('database', $event->command);
-        $this->assertStringContainsString("--queue='marketing'", $event->command);
+        $this->assertStringContainsString('--queue='.\Illuminate\Support\ProcessUtils::escapeArgument('marketing'), $event->command);
         $this->assertStringContainsString('--stop-when-empty', $event->command);
         $this->assertStringNotContainsString('--stop-when-empty=', $event->command);
         $this->assertStringContainsString('--max-jobs=5', $event->command);

@@ -75,12 +75,12 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <small class="text-muted d-block">Tipo de cliente</small>
+                        <small class="text-muted d-block">Tipo de representado</small>
                         <span class="text-capitalize">{{ $project->customer_type ?? '—' }}</span>
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <small class="text-muted d-block">ID Cliente</small>
+                        <small class="text-muted d-block">ID Representado</small>
                         <span style="font-family: monospace; font-size: 0.8rem;">
                             {{ $project->customer_id ?? '—' }}
                         </span>

@@ -159,7 +159,7 @@ class ClientChatController extends Controller
     private function authorizeChatAccess(): void
     {
         if (auth()->user()?->hasRole('Cliente')) {
-            abort(403, 'No tienes acceso al chat interno de clientes.');
+            abort(403, 'No tienes acceso al chat interno de representados.');
         }
     }
 
@@ -239,7 +239,7 @@ class ClientChatController extends Controller
 
             $recipient->notify(new ClientAppNotification(
                 title: ($wasMentioned ? 'Te mencionaron en el chat de ' : 'Nuevo mensaje interno sobre ')
-                    . ($client->name ?: "cliente #{$client->id}"),
+                    . ($client->name ?: "representado #{$client->id}"),
                 body: $preview,
                 actionUrl: route('crud.users.edit', $client) . '#client-chat',
                 actionText: 'Abrir chat',

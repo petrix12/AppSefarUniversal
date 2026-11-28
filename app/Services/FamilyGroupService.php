@@ -40,7 +40,7 @@ class FamilyGroupService
         $this->addClientToGroup($group, $passport, 'principal', [
             'confidence' => 100,
             'match_type' => 'principal',
-            'match_reasons' => ['Cliente base del grupo familiar'],
+            'match_reasons' => ['Representado base del grupo familiar'],
             'evidence' => [],
         ]);
 

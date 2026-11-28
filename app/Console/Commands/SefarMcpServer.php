@@ -72,7 +72,7 @@ class SefarMcpServer extends Command
                     ],
                     'instructions' => implode(' ', [
                         'MCP privado de App Sefar ejecutado dentro de Laravel.',
-                        'Requiere iniciar sesion con un usuario sin rol Cliente.',
+                        'Requiere iniciar sesion con un usuario sin rol Representado.',
                         'Todas las consultas tools/call se auditan en JSONL antes y despues de ejecutarse.',
                     ]),
                 ]),
@@ -94,7 +94,7 @@ class SefarMcpServer extends Command
         return array_merge([
             [
                 'name' => 'iniciar_sesion',
-                'description' => 'Inicia una sesion MCP dinamica con credenciales Laravel. Rechaza usuarios con rol Cliente.',
+                'description' => 'Inicia una sesion MCP dinamica con credenciales Laravel. Rechaza usuarios con rol Representado.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -131,7 +131,7 @@ class SefarMcpServer extends Command
             ],
             [
                 'name' => 'buscar_cliente',
-                'description' => 'Busca clientes por nombre, email, pasaporte, telefono o ID desde Laravel.',
+                'description' => 'Busca representados por nombre, email, pasaporte, telefono o ID desde Laravel.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -151,7 +151,7 @@ class SefarMcpServer extends Command
             ],
             [
                 'name' => 'ver_cliente',
-                'description' => 'Lee informacion basica de un cliente por ID.',
+                'description' => 'Lee informacion basica de un representado por ID.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -311,7 +311,7 @@ class SefarMcpServer extends Command
             $this->actor = null;
             $this->sessionId = null;
 
-            throw new RuntimeException('Sesion rechazada: el usuario autenticado tiene rol Cliente.');
+            throw new RuntimeException('Sesion rechazada: el usuario autenticado tiene rol Representado.');
         }
 
         $this->actor = $user;
@@ -445,7 +445,7 @@ class SefarMcpServer extends Command
             $this->actor = null;
             $this->sessionId = null;
 
-            throw new RuntimeException('Sesion revocada: el usuario tiene rol Cliente.');
+            throw new RuntimeException('Sesion revocada: el usuario tiene rol Representado.');
         }
     }
 
@@ -454,7 +454,7 @@ class SefarMcpServer extends Command
         $user = User::find($id);
 
         if (! $user || ! $user->hasRole('Cliente')) {
-            throw new RuntimeException('Cliente no encontrado.');
+            throw new RuntimeException('Representado no encontrado.');
         }
 
         return $user;

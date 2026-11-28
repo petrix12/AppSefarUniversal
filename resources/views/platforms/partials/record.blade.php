@@ -16,7 +16,7 @@
         <input type="hidden" name="operation_id" value="{{ $uuid }}"><input type="hidden" name="action" value="refund">
         <p>Saldo reembolsable guardado: <strong>{{ \App\Services\StripeMoney::display(max(0,(int)($data['amount']??0)-(int)($data['amount_refunded']??0)),$data['currency']??'eur') }}</strong>. Se comprobará nuevamente en Stripe antes de enviar la solicitud.</p>
         <div class="form-group"><label for="refund-amount">Importe a devolver · {{ strtoupper($data['currency']??'') }}</label><input class="form-control" id="refund-amount" name="amount" inputmode="decimal" placeholder="50.00" required pattern="[0-9]+([.][0-9]{1,3})?"></div>
-        <div class="form-group"><label for="refund-reason">Motivo</label><select class="form-control" id="refund-reason" name="reason"><option value="requested_by_customer">Solicitud del cliente</option><option value="duplicate">Pago duplicado</option><option value="fraudulent">Operación fraudulenta</option></select></div>
+        <div class="form-group"><label for="refund-reason">Motivo</label><select class="form-control" id="refund-reason" name="reason"><option value="requested_by_customer">Solicitud del representado</option><option value="duplicate">Pago duplicado</option><option value="fraudulent">Operación fraudulenta</option></select></div>
         <div class="form-group"><label for="refund-comment">Justificación interna</label><textarea class="form-control" id="refund-comment" name="comment" required maxlength="1000"></textarea></div>
         <label class="d-block"><input type="checkbox" name="confirmed" value="1" required> Confirmo el importe, la moneda y la devolución al medio de pago original.</label><button class="btn btn-danger" type="submit">Confirmar reembolso</button>
     </form>
@@ -24,7 +24,7 @@
 @endif
 @if($provider==='kalendia' && $record->resource==='forms' && is_array($data['fields']??null))
 <details class="mb-3"><summary>Registrar respuestas para una cita</summary><form method="POST" action="{{ route('admin.platforms.operate',[$provider,$account,$record]) }}" data-platform-form class="mt-3">@csrf<input type="hidden" name="operation_id" value="{{ $uuid }}"><input type="hidden" name="action" value="submission_create">
-    @foreach(['appointment_id'=>'Identificador de cita','customer_id'=>'Identificador de cliente','service_id'=>'Identificador de servicio'] as $field=>$label)<div class="form-group"><label for="form-{{ $field }}">{{ $label }}</label><input class="form-control" id="form-{{ $field }}" name="{{ $field }}" required></div>@endforeach
+    @foreach(['appointment_id'=>'Identificador de cita','customer_id'=>'Identificador de representado','service_id'=>'Identificador de servicio'] as $field=>$label)<div class="form-group"><label for="form-{{ $field }}">{{ $label }}</label><input class="form-control" id="form-{{ $field }}" name="{{ $field }}" required></div>@endforeach
     @foreach($data['fields'] as $field)@if(is_array($field) && is_string($field['id']??null))<div class="form-group"><label for="schema-answer-{{ $loop->index }}">{{ $field['label']??$field['name']??$field['id'] }}</label><textarea class="form-control" id="schema-answer-{{ $loop->index }}" name="values[{{ $field['id'] }}]" @required($field['required']??false) maxlength="10000"></textarea></div>@endif @endforeach
     <label class="d-block"><input type="checkbox" name="confirmed" value="1" required> Confirmo las respuestas y su relación con esta cita.</label><button class="btn btn-primary" type="submit">Registrar respuestas</button>
 </form></details>
@@ -32,7 +32,7 @@
 @if(!$readOnly && $provider==='stripe' && auth()->user()->isSuperadmin() && $record->resource==='payment_intents' && in_array($record->status,['requires_payment_method','requires_confirmation','requires_action','requires_capture'],true))
 <details class="mb-3"><summary class="text-danger">Cancelar intento de pago <i class="fas fa-crown ml-1" aria-label="Solo superadmins"></i></summary>
     <form method="POST" action="{{ route('admin.platforms.operate',[$provider,$account,$record]) }}" data-platform-form class="mt-3">@csrf<input type="hidden" name="operation_id" value="{{ $uuid }}"><input type="hidden" name="action" value="cancel_payment">
-        <div class="form-group"><label for="cancel-reason">Motivo</label><select class="form-control" id="cancel-reason" name="reason"><option value="requested_by_customer">Solicitud del cliente</option><option value="duplicate">Duplicado</option><option value="abandoned">Abandonado</option></select></div>
+        <div class="form-group"><label for="cancel-reason">Motivo</label><select class="form-control" id="cancel-reason" name="reason"><option value="requested_by_customer">Solicitud del representado</option><option value="duplicate">Duplicado</option><option value="abandoned">Abandonado</option></select></div>
         <div class="form-group"><label for="cancel-comment">Justificación interna</label><textarea class="form-control" id="cancel-comment" name="comment" required maxlength="1000"></textarea></div>
         <label class="d-block"><input type="checkbox" name="confirmed" value="1" required> Confirmo la cancelación y la liberación de fondos retenidos, si corresponde.</label><button class="btn btn-danger" type="submit">Confirmar cancelación</button>
     </form>

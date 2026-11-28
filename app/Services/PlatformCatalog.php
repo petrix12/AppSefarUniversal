@@ -16,12 +16,12 @@ class PlatformCatalog
         'payment.confirmed','payment.failed','payment.refunded','payment.updated','order.created','order.payment_updated','order.fulfillment_updated','product.updated'];
     public const STRIPE = [
         'charges'=>['Pagos','ch','charges'], 'payment_intents'=>['Intentos de pago','pi','payment_intents'],
-        'customers'=>['Clientes','cus','customers'], 'invoices'=>['Facturas','in','invoices'],
+        'customers'=>['Representados','cus','customers'], 'invoices'=>['Facturas','in','invoices'],
         'refunds'=>['Reembolsos','re','refunds'], 'subscriptions'=>['Suscripciones','sub','subscriptions'],
         'disputes'=>['Disputas','dp','disputes'], 'products'=>['Productos','prod','products'], 'prices'=>['Precios','price','prices'],
     ];
     public const KALENDIA = [
-        'customers'=>['Clientes','cli','customers'], 'appointments'=>['Citas','apt','appointments'],
+        'customers'=>['Representados','cli','customers'], 'appointments'=>['Citas','apt','appointments'],
         'services'=>['Servicios','svc','services'], 'staff'=>['Profesionales','stf','staff'], 'resources'=>['Recursos','res','resources'],
         'payments'=>['Pagos','pay','payments'], 'orders'=>['Pedidos','ord','orders'], 'products'=>['Productos','prd','products'],
         'categories'=>['Categorías',null,'categories'], 'inventory'=>['Inventario',null,'inventory'], 'coupons'=>['Cupones',null,'coupons'],

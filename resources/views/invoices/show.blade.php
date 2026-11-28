@@ -31,7 +31,7 @@
         {{-- ── CLIENTE ──────────────────────────────────────────────────── --}}
         <div class="col-md-6">
             <div class="card card-primary card-outline">
-                <div class="card-header"><h3 class="card-title">Cliente</h3></div>
+                <div class="card-header"><h3 class="card-title">Representado</h3></div>
                 <div class="card-body p-0">
                     <table class="table table-sm table-borderless mb-0">
                         <tr>
@@ -218,7 +218,7 @@
                 <div class="card-body p-0">
                     <table class="table table-sm table-borderless mb-0">
                         <tr>
-                            <td class="text-muted pl-3" style="width:40%">No. Dep. Cliente</td>
+                            <td class="text-muted pl-3" style="width:40%">No. Dep. Representado</td>
                             <td>{{ $invoice->deposit_number_client ?: '—' }}</td>
                         </tr>
                         <tr>

@@ -48,7 +48,7 @@ class McpClientApiTest extends TestCase
 
         $this->getJson('/api/mcp/v1/clientes?q=test')
             ->assertForbidden()
-            ->assertJsonPath('message', 'El MCP no esta disponible para usuarios con rol Cliente.');
+            ->assertJsonPath('message', 'El MCP no esta disponible para usuarios con rol Representado.');
     }
 
     public function test_streamable_mcp_lists_tools_with_mcp_read_token(): void
@@ -123,7 +123,7 @@ class McpClientApiTest extends TestCase
 
         $this->postJson('/mcp', $this->mcpRequest('tools/list'), $this->mcpHeaders('tools/list'))
             ->assertForbidden()
-            ->assertJsonPath('message', 'El MCP no esta disponible para usuarios con rol Cliente.');
+            ->assertJsonPath('message', 'El MCP no esta disponible para usuarios con rol Representado.');
     }
 
     public function test_streamable_mcp_can_call_client_search_tool(): void

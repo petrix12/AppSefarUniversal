@@ -8,7 +8,7 @@
 @section('content')
 @php
     $user = auth()->user();
-    $roleName = $user?->getRoleNames()->first() ?? 'Cliente';
+    $roleName = \App\Support\RepresentedLanguage::label($user?->getRoleNames()->first() ?? 'Representado');
     $location = $user?->city ?: '-';
     $phone = $user?->phone ?: '-';
 @endphp

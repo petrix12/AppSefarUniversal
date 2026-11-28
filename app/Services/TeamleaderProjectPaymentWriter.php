@@ -46,7 +46,7 @@ class TeamleaderProjectPaymentWriter
             throw new \RuntimeException('Teamleader no devolvió el proyecto que se iba a actualizar.');
         }
         if ($verifiedProject !== null && ($project['customer'] ?? []) !== ($verifiedProject['customer'] ?? [])) {
-            throw new \App\Services\Payments\PaymentSyncReviewException('El cliente del proyecto cambió durante la sincronización del abono.');
+            throw new \App\Services\Payments\PaymentSyncReviewException('El representado del proyecto cambió durante la sincronización del abono.');
         }
 
         $customFields = $this->customFieldsForUpdate($project['custom_fields'] ?? []);

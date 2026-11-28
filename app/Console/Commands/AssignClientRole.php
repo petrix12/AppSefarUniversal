@@ -10,7 +10,7 @@ use Spatie\Permission\PermissionRegistrar;
 class AssignClientRole extends Command
 {
     protected $signature = 'users:assign-client-role';
-    protected $description = 'Asignar rol cliente (ID 5) a usuarios que no tengan ningún rol';
+    protected $description = 'Asignar rol representado (ID 5) a usuarios que no tengan ningún rol';
 
     public function handle()
     {
@@ -33,12 +33,12 @@ class AssignClientRole extends Command
         foreach ($users as $user) {
             $user->assignRole($role);
             $count++;
-            $this->line("Rol cliente asignado a: {$user->id} - {$user->email}");
+            $this->line("Rol representado asignado a: {$user->id} - {$user->email}");
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $this->info("Se asignó el rol cliente a {$count} usuarios sin roles.");
+        $this->info("Se asignó el rol representado a {$count} usuarios sin roles.");
 
         return self::SUCCESS;
     }

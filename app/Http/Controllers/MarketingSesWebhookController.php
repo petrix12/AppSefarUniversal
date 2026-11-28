@@ -15,8 +15,19 @@ class MarketingSesWebhookController extends Controller
     public function __invoke(Request $request, SnsMessageVerifier $verifier)
     {
         $message = json_decode($request->getContent(), true);
-        if (!is_array($message) || empty($message['MessageId']) || !$verifier->verify($message)) {
+        $allowedTopics = array_values(array_unique(array_merge(
+            config('marketing.ses_sns_topic_arns', []), config('app_mail.ses_sns_topic_arns', [])
+        )));
+        if (!is_array($message) || empty($message['MessageId']) || !$verifier->verify($message, $allowedTopics)) {
             abort(403, 'Notificación SNS no verificada.');
+        }
+
+        if (($message['Type'] ?? '') === 'Notification') {
+            $appEvent = json_decode((string) ($message['Message'] ?? ''), true);
+            if (is_array($appEvent) && data_get($appEvent, 'mail.tags.app_mail_log_id.0') !== null) {
+                app(\App\Services\AppMailEvents::class)->record($appEvent, (string) $message['MessageId']);
+                return response()->json(['ok' => true]);
+            }
         }
 
         $webhook = MarketingWebhookEvent::firstOrCreate(
@@ -87,6 +98,7 @@ class MarketingSesWebhookController extends Controller
             $recipient->update($changes);
         }
         if (in_array($eventType, ['Bounce', 'Complaint'], true)) {
+            app(\App\Services\EmailDeliveryPolicy::class)->recordSesEvent($event, [$recipient->email]);
             MarketingContact::query()->whereKey($recipient->marketing_contact_id)->update([
                 'suppressed_at' => now(),
                 'suppression_reason' => strtolower($eventType),

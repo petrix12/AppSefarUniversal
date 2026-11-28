@@ -49,6 +49,10 @@
                                             <div class="grid grid-cols-6 gap-6">
                                                 <div class="col-span-12 sm:col-span-12">
                                                     <label for="name" class="block text-sm font-medium text-gray-700">Nombre del rol</label>
+                                                    @if($role->name === 'Cliente')
+                                                        <input type="hidden" name="name" value="{{ $role->name }}">
+                                                        <input type="text" id="name" value="Representado" disabled class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm">
+                                                    @else
                                                     <input  type="text" 
                                                             name="name" 
                                                             id="name" 
@@ -56,6 +60,7 @@
                                                             value="{{ old('name', $role->name) }}"
                                                             class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                                                     />
+                                                    @endif
                                                 </div>
                                                 @error('name')
                                                     <div class="col-span-12 sm:col-span-12">

@@ -165,14 +165,14 @@ class AutomationRuleController extends Controller
         }
 
         if ($data['trigger_type'] === AutomationRule::TRIGGER_DATE_FIELD && $data['entity_type'] !== 'client') {
-            throw ValidationException::withMessages(['entity_type' => 'Las reglas por fecha se aplican a clientes.']);
+            throw ValidationException::withMessages(['entity_type' => 'Las reglas por fecha se aplican a representados.']);
         }
 
         if ($data['trigger_type'] === AutomationRule::TRIGGER_SCHEDULE
             && $data['entity_type'] === 'client'
             && empty($triggerConfig['client_id'])) {
             throw ValidationException::withMessages([
-                'trigger_config_json' => 'Una programación para cliente requiere trigger_config.client_id.',
+                'trigger_config_json' => 'Una programación para representado requiere trigger_config.client_id.',
             ]);
         }
 

@@ -192,7 +192,7 @@
                             name="identifiers"
                             class="form-control task-bulk-reassign-textarea"
                             rows="3"
-                            placeholder="Ej: 13797, cliente@correo.com, 14002"
+                            placeholder="Ej: 13797, representado@correo.com, 14002"
                             required
                         ></textarea>
                     </div>
@@ -558,7 +558,7 @@
                                                     <dd class="col-sm-8">
                                                         @if($task->contact)
                                                             <a href="{{ url('/users/' . $task->contact->id . '/edit') }}" target="_blank">
-                                                                Abrir ficha del cliente
+                                                                Abrir ficha del representado
                                                             </a>
                                                         @else
                                                             —

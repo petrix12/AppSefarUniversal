@@ -46,7 +46,7 @@
                                                 <div class="md:flex ms:flex-wrap">
                                                     <div class="px-1 py-2 m-2 flex">    {{-- IDCliente --}}
                                                         <div>
-                                                            <label for="IDCliente" class="block text-sm font-medium text-gray-700">ID Cliente</label>
+                                                            <label for="IDCliente" class="block text-sm font-medium text-gray-700">ID Representado</label>
                                                             <input value="{{ old('IDCliente') }}" type="text" name="IDCliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('IDCliente')
                                                                 <small style="color:red">*{{ $message }}*</small>
@@ -56,7 +56,7 @@
 
                                                     <div class="px-1 py-2 m-2 flex-1">    {{-- Nombres --}}
                                                         <div>
-                                                            <label for="Cliente" class="block text-sm font-medium text-gray-700">Nombre del cliente</label>
+                                                            <label for="Cliente" class="block text-sm font-medium text-gray-700">Nombre del representado</label>
                                                             <input value="{{ old('Cliente') }}" type="text" name="Cliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('Cliente')
                                                                 <small style="color:red">*{{ $message }}*</small>

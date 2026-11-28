@@ -82,7 +82,7 @@ class HubspotMigrationReport extends Command
         if (Schema::hasTable('users') && Schema::hasColumn('users', 'hs_id')) {
             $clients = DB::table('users')->whereIn('id', \App\Models\User::clients()->select('users.id'));
             $this->line('Cuentas vinculadas por hs_id: '.(clone $clients)->whereNotNull('hs_id')->where('hs_id', '!=', '')->count());
-            $this->line('Cuentas cliente sin hs_id: '.(clone $clients)->where(function ($query): void {
+            $this->line('Cuentas representado sin hs_id: '.(clone $clients)->where(function ($query): void {
                 $query->whereNull('hs_id')->orWhere('hs_id', '');
             })->count());
         }

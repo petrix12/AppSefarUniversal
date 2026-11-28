@@ -21,7 +21,10 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
         \Illuminate\Auth\Events\Login::class => [\App\Listeners\CompleteGoogleAccountLink::class],
-        \Illuminate\Mail\Events\MessageSending::class => [\App\Listeners\PreventBlockedClientDelivery::class.'@mail'],
+        \Illuminate\Mail\Events\MessageSending::class => [
+            \App\Listeners\PreventBlockedClientDelivery::class.'@mail',
+            \App\Listeners\ApplyAppEmailTemplate::class,
+        ],
         \Illuminate\Notifications\Events\NotificationSending::class => [\App\Listeners\PreventBlockedClientDelivery::class.'@notification'],
         Registered::class => [
             SendEmailVerificationNotification::class,

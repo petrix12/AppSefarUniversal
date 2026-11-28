@@ -16,7 +16,7 @@ class GetController extends Controller
     public function capturar_parametros_get(Request $request){
         $pos = strpos($request->fullUrl(), '?');
         $parametros = substr($request->fullUrl(), $pos);
-        Alert::info('Enlaces para registrar cliente', '
+        Alert::info('Enlaces para registrar representado', '
             <small>
                 <p><strong>http://sefar.test/register</strong>'.$parametros.'</p>
                 <br><hr><br>

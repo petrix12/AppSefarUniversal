@@ -449,7 +449,7 @@ class ClientCosSnapshotService
         }
 
         if ($failOnError && $lookupError) {
-            throw new \RuntimeException('No se pudo comprobar el contacto del cliente en HubSpot.', 0, $lookupError);
+            throw new \RuntimeException('No se pudo comprobar el contacto del representado en HubSpot.', 0, $lookupError);
         }
 
         return null;
@@ -562,7 +562,7 @@ class ClientCosSnapshotService
             if ($mondayUserDetailsPre === null) {
                 $result = json_decode(json_encode(Monday::customQuery($query)), true);
                 if (! empty($result['errors']) || ! is_array($result['items'] ?? null)) {
-                    throw new \RuntimeException('Monday no devolvió los datos del cliente; se conserva el COS anterior.');
+                    throw new \RuntimeException('Monday no devolvió los datos del representado; se conserva el COS anterior.');
                 }
                 $mondayUserDetailsPre = $result['items'][0] ?? null;
             }

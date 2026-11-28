@@ -337,7 +337,7 @@ class UnificationMapController extends Controller
         if (is_array($selectedCandidate)
             && ! $this->canAuditEntityTypesBeMapped($selectedCandidate['left']['entity_type'], $selectedCandidate['right']['entity_type'])) {
             return response()->json([
-                'message' => 'La IA no puede asociar Contacto/cliente con Negocio/Deal/Proyecto. Selecciona entidades equivalentes.',
+                'message' => 'La IA no puede asociar Contacto/representado con Negocio/Deal/Proyecto. Selecciona entidades equivalentes.',
             ], 422);
         }
 
@@ -409,7 +409,7 @@ class UnificationMapController extends Controller
         }
         if (! $this->canAuditEntityTypesBeMapped($data['left_entity_type'], $data['right_entity_type'])) {
             return back()->withErrors([
-                'left_field_key' => 'No se puede asociar un campo de contacto/cliente con un campo de negocio/proyecto. Selecciona Contacto ↔ Contacto o Negocio ↔ Deal/Proyecto. Monday se permite solo como tablero clasificado manualmente.',
+                'left_field_key' => 'No se puede asociar un campo de contacto/representado con un campo de negocio/proyecto. Selecciona Contacto ↔ Contacto o Negocio ↔ Deal/Proyecto. Monday se permite solo como tablero clasificado manualmente.',
             ])->withInput();
         }
 

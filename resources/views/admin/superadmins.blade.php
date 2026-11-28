@@ -9,7 +9,7 @@
     <div class="card card-outline card-primary">
         <div class="card-header"><h2 class="card-title">Permisos especiales</h2></div>
         <div class="card-body">
-            <p class="text-muted">Solo los superadmins pueden conceder esta marca y eliminar notas de clientes.</p>
+            <p class="text-muted">Solo los superadmins pueden conceder esta marca y eliminar notas de representados.</p>
             <form method="GET" class="mb-3">
                 <label for="superadmin-search">Buscar por nombre o correo</label>
                 <div class="input-group"><input class="form-control" id="superadmin-search" name="search" value="{{ $search }}" maxlength="255">

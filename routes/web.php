@@ -139,6 +139,14 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
         ->prefix('admin/integrations')
         ->name('admin.integrations.')
         ->group(function () {
+            Route::get('/app-mail', [\App\Http\Controllers\AdminAppMailController::class, 'show'])->name('app-mail.index');
+            Route::put('/app-mail', [\App\Http\Controllers\AdminAppMailController::class, 'update'])->name('app-mail.update');
+            Route::post('/app-mail/test', [\App\Http\Controllers\AdminAppMailController::class, 'test'])
+                ->middleware('throttle:3,1')->name('app-mail.test');
+            Route::post('/app-mail/suppressions/{suppression}/clear', [\App\Http\Controllers\AdminAppMailController::class, 'clearSuppression'])
+                ->whereNumber('suppression')->name('app-mail.suppressions.clear');
+            Route::post('/app-mail/clients/{user}/response', [\App\Http\Controllers\AdminAppMailController::class, 'recordResponse'])
+                ->whereNumber('user')->name('app-mail.response');
             Route::get('/crm-sync', \App\Http\Controllers\AdminCrmSyncController::class)->name('crm-sync');
             Route::get('/crm-sync/cos-progress', [\App\Http\Controllers\AdminCrmSyncController::class, 'cosProgress'])
                 ->name('crm-sync.cos-progress');
@@ -194,6 +202,12 @@ Route::middleware(['auth', \App\Http\Middleware\RestrictClientRoutes::class])->g
             Route::post('/lists/import', [MarketingCampaignController::class, 'importList'])->name('lists.import');
             Route::get('/templates', [MarketingCampaignController::class, 'templates'])->name('templates.index');
             Route::post('/templates', [MarketingCampaignController::class, 'storeTemplate'])->name('templates.store');
+            Route::post('/templates/generate', [MarketingCampaignController::class, 'generateTemplate'])
+                ->middleware('throttle:5,1')->name('templates.generate');
+            Route::put('/templates/prompt', [MarketingCampaignController::class, 'saveTemplatePrompt'])
+                ->middleware('throttle:20,1')->name('templates.prompt.update');
+            Route::get('/templates/{template}/edit', [MarketingCampaignController::class, 'editTemplate'])->whereNumber('template')->name('templates.edit');
+            Route::put('/templates/{template}', [MarketingCampaignController::class, 'updateTemplate'])->whereNumber('template')->name('templates.update');
             Route::post('/templates/images', [MarketingCampaignController::class, 'uploadTemplateImage'])->name('templates.images.store');
             Route::get('/setup', [MarketingCampaignController::class, 'setup'])->name('setup');
         });

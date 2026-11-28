@@ -8,7 +8,7 @@ class PlatformPresentation
         return ['pending'=>'Pendiente','processing'=>'En proceso','succeeded'=>'Confirmado','synced'=>'Sincronizado','retry'=>'Reintento pendiente',
             'review'=>'Requiere revisión','uncertain'=>'Sin confirmar','rejected'=>'Rechazado','paid'=>'Pagado','refunded'=>'Reembolsado','partially_refunded'=>'Reembolso parcial','failed'=>'Fallido',
             'canceled'=>'Cancelado','cancelled'=>'Cancelado','confirmed'=>'Confirmado','active'=>'Activo','inactive'=>'Inactivo','deleted'=>'Eliminado',
-            'requires_payment_method'=>'Pendiente de método de pago','requires_confirmation'=>'Pendiente de confirmación','requires_action'=>'Pendiente del cliente',
+            'requires_payment_method'=>'Pendiente de método de pago','requires_confirmation'=>'Pendiente de confirmación','requires_action'=>'Pendiente del representado',
             'requires_capture'=>'Pendiente de captura','draft'=>'Borrador','open'=>'Abierta','void'=>'Anulada','past_due'=>'Vencida',
             'completed'=>'Completado','no_show'=>'No asistió'][$status??'']??($status?:'—');
     }
@@ -23,9 +23,9 @@ class PlatformPresentation
     public static function label(string $key): string
     {
         return ['id'=>'Identificador','name'=>'Nombre','email'=>'Correo','phone'=>'Teléfono','description'=>'Descripción','status'=>'Estado','currency'=>'Moneda',
-            'captured'=>'Capturado','amount_captured'=>'Importe capturado','amount_capturable'=>'Importe pendiente de captura','unit_amount'=>'Precio unitario','service_id'=>'Servicio','staff_id'=>'Profesional','payment_id'=>'Pago de Kalendia','customer_id'=>'Cliente de Kalendia','appointment_id'=>'Cita','form_id'=>'Formulario','cancel_at_period_end'=>'Cancelación al final del periodo','amount'=>'Importe','amount_refunded'=>'Importe reembolsado','amount_due'=>'Importe facturado','amount_paid'=>'Importe pagado',
+            'captured'=>'Capturado','amount_captured'=>'Importe capturado','amount_capturable'=>'Importe pendiente de captura','unit_amount'=>'Precio unitario','service_id'=>'Servicio','staff_id'=>'Profesional','payment_id'=>'Pago de Kalendia','customer_id'=>'Representado de Kalendia','appointment_id'=>'Cita','form_id'=>'Formulario','cancel_at_period_end'=>'Cancelación al final del periodo','amount'=>'Importe','amount_refunded'=>'Importe reembolsado','amount_due'=>'Importe facturado','amount_paid'=>'Importe pagado',
             'amount_remaining'=>'Saldo pendiente','amount_received'=>'Importe recibido','number'=>'Número de factura','paid'=>'Pagado','refunded'=>'Reembolsado',
-            'customer'=>'Cliente','customer_name'=>'Nombre del cliente','customer_email'=>'Correo del cliente','client_id'=>'Cliente de Kalendia',
+            'customer'=>'Representado','customer_name'=>'Nombre del representado','customer_email'=>'Correo del representado','client_id'=>'Representado de Kalendia',
             'service_name'=>'Servicio','staff_name'=>'Profesional','timezone'=>'Zona horaria','starts_at'=>'Inicio','ends_at'=>'Fin','address'=>'Dirección',
             'price'=>'Precio','duration_minutes'=>'Duración en minutos','properties'=>'Propiedades','values'=>'Respuestas','fields'=>'Campos',
             'created'=>'Fecha de creación','updated_at'=>'Fecha de actualización','payment_intent'=>'Intento de pago','charge'=>'Pago original',

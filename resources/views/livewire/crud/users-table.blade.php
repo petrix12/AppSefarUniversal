@@ -5,14 +5,14 @@
             <div class="modal-content">
                 <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;">
                     <h3 id="block-user-title" style="font-size:1.1rem; font-weight:600; color:#111827; margin:0;">
-                        <i class="fas fa-user-lock mr-2 text-danger"></i> Bloquear cliente
+                        <i class="fas fa-user-lock mr-2 text-danger"></i> Bloquear representado
                     </h3>
                     <button type="button" wire:click="closeBlockModal" aria-label="Cerrar" style="background:none; border:0; font-size:1.25rem; color:#6b7280; cursor:pointer;">✕</button>
                 </div>
 
                 <form wire:submit="blockUser">
                     <div class="modal-body" style="padding:24px;">
-                        <p style="margin-top:0; color:#4b5563;">Indica el motivo por el que se bloqueará a <strong>{{ $blockModalData['name'] ?? 'este cliente' }}</strong>. El cliente podrá iniciar sesión, pero no entrar a las ventanas de la aplicación.</p>
+                        <p style="margin-top:0; color:#4b5563;">Indica el motivo por el que se bloqueará a <strong>{{ $blockModalData['name'] ?? 'este representado' }}</strong>. El representado podrá iniciar sesión, pero no entrar a las ventanas de la aplicación.</p>
 
                         <label for="blockReason" style="display:block; font-weight:600; margin-bottom:6px;">Motivo del bloqueo</label>
                         <select id="blockReason" wire:model.live="blockReason" class="form-control">
@@ -524,7 +524,7 @@
                 <div class="bg-gray-50">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:py-6 lg:px-8 lg:flex lg:items-center lg:justify-between">
                         <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                            <span class="ctvSefar block text-indigo-600">{{ $entityType === 'internal' ? 'Usuarios internos' : 'Contactos y clientes' }}</span>
+                            <span class="ctvSefar block text-indigo-600">{{ $entityType === 'internal' ? 'Usuarios internos' : 'Contactos y representados' }}</span>
                         </h2>
                         @canany(['clients.export', 'crud.users.create', 'administrador', 'superadmin'])
                             <div class="mt-4 flex flex-wrap items-center gap-3 lg:mt-0 lg:flex-shrink-0">
@@ -532,7 +532,7 @@
                                     <div class="inline-flex rounded-md shadow">
                                         <a href="{{ route('admin.client-exports.index') }}"
                                            class="cfrSefar inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                                            Exportar clientes
+                                            Exportar representados
                                         </a>
                                     </div>
                                 @endcan
@@ -598,7 +598,7 @@
                             @if($entityType === 'internal')
                                 Gestión de cuentas internas. Esta sección está disponible únicamente para superadmins.
                             @else
-                                Los contactos con rol Cliente se muestran por separado de las cuentas internas.
+                                Los contactos con rol Representado se muestran por separado de las cuentas internas.
                             @endif
                         </p>
                     </div>
@@ -716,7 +716,7 @@
                                             class="block w-full border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                             style="min-height: 42px;">
                                         @foreach($rolesList as $r)
-                                            <option value="{{ $r['id'] }}">{{ $r['name'] }}</option>
+                                            <option value="{{ $r['id'] }}">{{ \App\Support\RepresentedLanguage::label($r['name']) }}</option>
                                         @endforeach
                                     </select>
                                     <small class="text-gray-500">Puedes seleccionar varios con Ctrl/⌘</small>
@@ -791,6 +791,7 @@
                                             <p class="text-sm text-gray-600 mt-1">
                                                 <i class="fas fa-envelope mr-1"></i> {{ $user->email }}
                                             </p>
+                                            @include('livewire.crud.partials.user-email-status')
 
                                             @if($user->isClientAppAccessBlocked())
                                                 <p class="text-sm text-danger mt-1"><strong>Motivo:</strong> {{ $user->clientBlockReasonDescription() }}</p>
@@ -897,7 +898,7 @@
                                                         <button type="button" class="btn btn-danger w-full" wire:click="openBlockModal({{ $user->id }})">
                                                             <i class="fas fa-lock fa-fw"></i>
                                                         </button>
-                                                        <span class="tooltip-text">Bloquear cliente</span>
+                                                        <span class="tooltip-text">Bloquear representado</span>
                                                     @endif
                                                 </div>
                                             @endif
@@ -909,7 +910,7 @@
                                                    data-href="{{ route('crud.users.edit', $user) }}">
                                                     <i class="fas fa-exclamation fa-fw"></i>
                                                 </a>
-                                                <span class="tooltip-text">Estatus del Cliente</span>
+                                                <span class="tooltip-text">Estatus del Representado</span>
                                             </div>
 
                                             @if ($user->passport || $user->genealogy_tree_id)
@@ -997,6 +998,7 @@
 
                                                 <p class="user-name">{{ \Illuminate\Support\Str::limit($user->name, 25) }} <x-superadmin-indicator :user="$user" /></p>
                                                 <p class="user-info">{{ $user->email }}</p>
+                                                @include('livewire.crud.partials.user-email-status')
                                                 <p class="user-info">{{ $user->passport }}</p>
                                                 @include('livewire.crud.partials.user-passport-history')
                                                 @if($user->isClientAppAccessBlocked())
@@ -1082,7 +1084,7 @@
                                                                     <button type="button" class="btn btn-danger" wire:click="openBlockModal({{ $user->id }})">
                                                                         <i class="fas fa-lock fa-fw"></i>
                                                                     </button>
-                                                                    <span class="tooltip-text">Bloquear cliente</span>
+                                                                    <span class="tooltip-text">Bloquear representado</span>
                                                                 @endif
                                                             </div>
                                                         @endif
@@ -1094,7 +1096,7 @@
                                                                data-href="{{ route('crud.users.edit', $user) }}">
                                                                 <i class="fas fa-exclamation fa-fw"></i>
                                                             </a>
-                                                            <span class="tooltip-text">Estatus del Cliente</span>
+                                                            <span class="tooltip-text">Estatus del Representado</span>
                                                         </div>
 
                                                         @if ($user->passport || $user->genealogy_tree_id)

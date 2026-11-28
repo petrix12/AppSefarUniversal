@@ -305,7 +305,7 @@
                                     <option value="MADRID" {{ $selectedValue == 'MADRID' ? 'selected' : '' }}>MADRID</option>
                                     <option value="SE ENVIO A MADRID" {{ $selectedValue == 'SE ENVIO A MADRID' ? 'selected' : '' }}>SE ENVIO A MADRID</option>
                                     <option value="SE ENVIO A SEVILLA" {{ $selectedValue == 'SE ENVIO A SEVILLA' ? 'selected' : '' }}>SE ENVIO A SEVILLA</option>
-                                    <option value="CLIENTE" {{ $selectedValue == 'CLIENTE' ? 'selected' : '' }}>CLIENTE</option>
+                                    <option value="CLIENTE" {{ $selectedValue == 'CLIENTE' ? 'selected' : '' }}>REPRESENTADO</option>
                                     <option value="CON NATHALY" {{ $selectedValue == 'CON NATHALY' ? 'selected' : '' }}>CON NATHALY</option>
                                     <option value="ESPAÑA" {{ $selectedValue == 'ESPAÑA' ? 'selected' : '' }}>España</option>
                                     <option value="ITALIA" {{ $selectedValue == 'ITALIA' ? 'selected' : '' }}>ITALIA</option>
@@ -401,7 +401,7 @@
                                     <option value="" {{ $selectedValue == '' ? 'selected' : '' }}>Elegir…</option>
                                     <option value="TASA IMPRESA" {{ $selectedValue == 'TASA IMPRESA' ? 'selected' : '' }}>TASA IMPRESA</option>
                                     <option value="TASA PAGADA POR SEFAR" {{ $selectedValue == 'TASA PAGADA POR SEFAR' ? 'selected' : '' }}>TASA PAGADA POR SEFAR</option>
-                                    <option value="TASA PAGADA POR CLIENTE" {{ $selectedValue == 'TASA PAGADA POR CLIENTE' ? 'selected' : '' }}>TASA PAGADA POR CLIENTE</option>
+                                    <option value="TASA PAGADA POR CLIENTE" {{ $selectedValue == 'TASA PAGADA POR CLIENTE' ? 'selected' : '' }}>TASA PAGADA POR REPRESENTADO</option>
                                     <option value="Tasa pagada por Sevilla" {{ $selectedValue == 'Tasa pagada por Sevilla' ? 'selected' : '' }}>Tasa pagada por Sevilla</option>
                                     <option value="OTRO" {{ $selectedValue == 'Otro…' ? 'selected' : '' }}>Otro…</option>
                                 </select>
@@ -462,13 +462,13 @@
 
                         <div class="mt-3" style="display: flex; gap: 16px; flex-wrap: wrap;">
                             <div style="flex: 1;" class="mb-3">
-                                <label for="n1__enviada_al_cliente" class="block text-sm font-medium text-gray-700">Enviada al Cliente</label>
+                                <label for="n1__enviada_al_cliente" class="block text-sm font-medium text-gray-700">Enviada al Representado</label>
                                 <input type="date" id="n1__enviada_al_cliente" name="n1__enviada_al_cliente"
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value="{{ old('n1__enviada_al_cliente', $deal_db->n1__enviada_al_cliente) }}">
                             </div>
                             <div style="flex: 1;" class="mb-3">
-                                <label for="n2__firmado_por_el_cliente" class="block text-sm font-medium text-gray-700">Firmado por el Cliente</label>
+                                <label for="n2__firmado_por_el_cliente" class="block text-sm font-medium text-gray-700">Firmado por el Representado</label>
                                 <input type="date" id="n2__firmado_por_el_cliente" name="n2__firmado_por_el_cliente"
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                     value="{{ old('n2__firmado_por_el_cliente', $deal_db->n2__firmado_por_el_cliente) }}">
@@ -569,7 +569,7 @@
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                             @if(!($deal_db->fase_1_enviado || $deal_db->fase_1_preestab))
-                                <button type="button" id="guardarFase1" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
+                                <button type="button" id="guardarFase1" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Representado</button>
                             @else
                                 @if (!($deal_db->fase_1_pagado || $deal_db->fase_1_pagado__teamleader_))
                                     <div class="w-full">
@@ -628,7 +628,7 @@
                             @endif
                             <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                                 @if(!($deal_db->fase_2_enviado || $deal_db->fase_2_preestab))
-                                    <button type="button" id="guardarFase2" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
+                                    <button type="button" id="guardarFase2" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Representado</button>
                                 @else
                                     @if (!($deal_db->fase_2_pagado || $deal_db->fase_2_pagado__teamleader_))
                                         <div class="w-full">
@@ -688,7 +688,7 @@
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                             @if(!($deal_db->fase_3_enviado || $deal_db->fase_3_preestab ))
-                                <button type="button" id="guardarFase3" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
+                                <button type="button" id="guardarFase3" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Representado</button>
                             @else
                                 @if (!($deal_db->fase_3_pagado || $deal_db->fase_3_pagado__teamleader_))
                                     <div class="w-full">
@@ -750,7 +750,7 @@
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                             @if(!$deal_db->carta_nat_enviado )
-                                <button type="button" id="guardarCartaNat" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
+                                <button type="button" id="guardarCartaNat" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Representado</button>
                             @else
                                 @if (!$deal_db->carta_nat_fechapagado)
                                     <div class="w-full">
@@ -804,7 +804,7 @@
                         @endif
                         <div style="flex: 1; display: flex; align-items: flex-end;" class="mb-3">
                             @if(!$deal_db->carta_cilfcje_enviado )
-                                <button type="button" id="guardarfcjecil" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Cliente</button>
+                                <button type="button" id="guardarfcjecil" class="cfrSefar btn btn-primary mt-3">Enviar Cobro a Representado</button>
                             @else
                                 @if (!$deal_db->cilfcje_fechapagado)
                                     <label for="carta_cilfcje_enviado" class="block text-sm font-medium text-gray-700">FCJE/CIL (Fecha: Pago enviado)</label>
@@ -857,7 +857,7 @@
                                 if ($(`#exonerar_fase_1`).prop('checked')) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a exonerar al cliente. Esto solo lo puede deshacer un administrador.",
+                                        text: "El cambio va a exonerar al representado. Esto solo lo puede deshacer un administrador.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',
@@ -904,7 +904,7 @@
                                 if ($(`#exonerar_fase_3`).prop('checked')) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a exonerar al cliente. Esto solo lo puede deshacer un administrador.",
+                                        text: "El cambio va a exonerar al representado. Esto solo lo puede deshacer un administrador.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',
@@ -949,7 +949,7 @@
                                 if ($(`#exonerar_fase_2`).prop('checked')) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a exonerar al cliente. Esto solo lo puede deshacer un administrador.",
+                                        text: "El cambio va a exonerar al representado. Esto solo lo puede deshacer un administrador.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',
@@ -994,7 +994,7 @@
                                 if ($(`#exonerar_cil_fcje`).prop('checked')) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a exonerar al cliente. Esto solo lo puede deshacer un administrador.",
+                                        text: "El cambio va a exonerar al representado. Esto solo lo puede deshacer un administrador.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',
@@ -1039,7 +1039,7 @@
                                 if ($(`#exonerar_carta_nat`).prop('checked')) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a exonerar al cliente. Esto solo lo puede deshacer un administrador.",
+                                        text: "El cambio va a exonerar al representado. Esto solo lo puede deshacer un administrador.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',
@@ -1084,7 +1084,7 @@
                                 if ($(`#incluido_fase1_cil_fcje`).prop('checked')) {
                                     Swal.fire({
                                         title: '¿Estás seguro?',
-                                        text: "El cambio va a exonerar al cliente. Esto solo lo puede deshacer un administrador.",
+                                        text: "El cambio va a exonerar al representado. Esto solo lo puede deshacer un administrador.",
                                         icon: 'warning',
                                         showCancelButton: true,
                                         confirmButtonColor: '#3085d6',
@@ -1127,13 +1127,13 @@
 
                             $("#guardarFase1").on('click', function() {
                                 if ($("#fase_1_preestab").val()==="") {
-                                    Swal.fire('Error', 'Debe preasignar un monto antes de enviar al cliente.', 'error');
+                                    Swal.fire('Error', 'Debe preasignar un monto antes de enviar al representado.', 'error');
                                     return false;
                                 }
 
                                 Swal.fire({
                                     title: '¿Estás seguro?',
-                                    text: "Al enviar pago, se le notificará al cliente que debe pagar. Esto solo lo podrá deshacer un administrador.",
+                                    text: "Al enviar pago, se le notificará al representado que debe pagar. Esto solo lo podrá deshacer un administrador.",
                                     icon: 'warning',
                                     showCancelButton: true,
                                     confirmButtonColor: '#3085d6',
@@ -1175,13 +1175,13 @@
 
                             $("#guardarFase2").on('click', function() {
                                 if ($("#fase_2_preestab").val()==="") {
-                                    Swal.fire('Error', 'Debe preasignar un monto antes de enviar al cliente.', 'error');
+                                    Swal.fire('Error', 'Debe preasignar un monto antes de enviar al representado.', 'error');
                                     return false;
                                 }
 
                                 Swal.fire({
                                     title: '¿Estás seguro?',
-                                    text: "Al enviar pago, se le notificará al cliente que debe pagar. Esto solo lo podrá deshacer un administrador.",
+                                    text: "Al enviar pago, se le notificará al representado que debe pagar. Esto solo lo podrá deshacer un administrador.",
                                     icon: 'warning',
                                     showCancelButton: true,
                                     confirmButtonColor: '#3085d6',
@@ -1231,7 +1231,7 @@
 
                                 Swal.fire({
                                     title: '¿Estás seguro?',
-                                    text: "Al enviar pago, se le notificará al cliente que debe pagar. Esto solo lo podrá deshacer un administrador.",
+                                    text: "Al enviar pago, se le notificará al representado que debe pagar. Esto solo lo podrá deshacer un administrador.",
                                     icon: 'warning',
                                     showCancelButton: true,
                                     confirmButtonColor: '#3085d6',
@@ -1456,7 +1456,7 @@
 
         button.addEventListener('click', async () => {
             button.disabled = true;
-            showMessage('text-muted small', 'Comparando el negocio con los proyectos de este cliente...');
+            showMessage('text-muted small', 'Comparando el negocio con los proyectos de este representado...');
 
             try {
                 const response = await postJson(button.dataset.url, {});

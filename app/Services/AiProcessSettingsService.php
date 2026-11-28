@@ -11,9 +11,17 @@ class AiProcessSettingsService
     public const FALLBACK_MODEL = 'google/gemini-3.1-flash-lite';
 
     private const DEFAULTS = [
+        'email_template_generation' => [
+            'label' => 'Generador de correos',
+            'description' => 'Redacta plantillas editables con la identidad de Sefar Universal para sus representados.',
+            'model' => self::DEFAULT_MODEL,
+            'fallback_models' => [self::FALLBACK_MODEL],
+            'timeout_seconds' => 45,
+            'max_tokens' => 4000,
+        ],
         'brightbean_chat' => [
-            'label' => 'BrightBean: atención al cliente',
-            'description' => 'Respuestas a mensajes de clientes desde BrightBean con la integración OpenRouter de la App.',
+            'label' => 'BrightBean: atención al representado',
+            'description' => 'Respuestas a mensajes de representados desde BrightBean con la integración OpenRouter de la App.',
             'model' => self::DEFAULT_MODEL,
             'fallback_models' => [self::FALLBACK_MODEL],
             'timeout_seconds' => 30,

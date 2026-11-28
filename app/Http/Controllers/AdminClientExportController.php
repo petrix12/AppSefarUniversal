@@ -32,7 +32,7 @@ class AdminClientExportController extends Controller
     public function download(Request $request)
     {
         [$filters, $export] = $this->exportFor($request);
-        $filename = 'clientes-'.$filters['group'].'-'.now()->format('Y-m-d-His');
+        $filename = 'representados-'.$filters['group'].'-'.now()->format('Y-m-d-His');
 
         if ($filters['format'] === 'csv') {
             return response()->streamDownload(function () use ($export): void {

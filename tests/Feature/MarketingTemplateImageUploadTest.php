@@ -25,6 +25,7 @@ class MarketingTemplateImageUploadTest extends TestCase
     {
         Storage::fake('s3');
         $admin = User::factory()->create();
+        $admin->syncRoles([Role::findOrCreate('Administrador')]);
         $admin->givePermissionTo(Permission::findOrCreate('administrador'));
 
         $response = $this->actingAs($admin)->postJson(route('marketing.templates.images.store'), [
@@ -42,6 +43,7 @@ class MarketingTemplateImageUploadTest extends TestCase
     {
         Storage::fake('s3');
         $admin = User::factory()->create();
+        $admin->syncRoles([Role::findOrCreate('Administrador')]);
         $admin->givePermissionTo(Permission::findOrCreate('administrador'));
 
         $this->actingAs($admin)

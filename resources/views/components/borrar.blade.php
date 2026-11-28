@@ -6,7 +6,7 @@
                 @if ($editar)
                     Editar: {{ $nombre }}    
                 @else
-                    Añadir: {{ $persona }}
+                    Añadir: {{ \App\Support\RepresentedLanguage::label($persona) }}
                 @endif
             </div>
             <div onclick="document.getElementById('editarPersona{{ $id }}').close();" class="flex w-1/12 h-auto justify-center cursor-pointer">

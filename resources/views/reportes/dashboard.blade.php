@@ -261,7 +261,7 @@
                                     <th>#</th>
                                     <th>Fecha</th>
                                     <th>Asesor</th>
-                                    <th>Cliente</th>
+                                    <th>Representado</th>
                                     <th>Titulo</th>
                                     <th>Estatus</th>
                                     <th style="width:120px">Accion</th>
@@ -644,7 +644,7 @@
             data: {
                 labels: chartData.sales_pipeline.labels,
                 datasets: [{
-                    label: 'Clientes',
+                    label: 'Representados',
                     data: chartData.sales_pipeline.data,
                     backgroundColor: ['#0EA5E9', '#6366F1', '#F59E0B', '#14B8A6', '#22C55E']
                 }]

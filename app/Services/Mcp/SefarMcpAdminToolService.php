@@ -36,12 +36,12 @@ class SefarMcpAdminToolService
         return [
             [
                 'name' => 'revisar_cliente_integral',
-                'description' => 'Consulta la ficha completa disponible de un cliente en App Sefar, su arbol genealogico y los datos relacionados en HubSpot y Teamleader. Es exclusiva para administradores; omite secretos de autenticacion y no descarga el contenido de archivos.',
+                'description' => 'Consulta la ficha completa disponible de un representado en App Sefar, su arbol genealogico y los datos relacionados en HubSpot y Teamleader. Es exclusiva para administradores; omite secretos de autenticacion y no descarga el contenido de archivos.',
                 'inputSchema' => $this->clientIdSchema(),
             ],
             [
                 'name' => 'actualizar_cliente_app',
-                'description' => 'Actualiza campos permitidos del perfil del cliente en App Sefar. Solo administradores; cada cambio queda en la auditoria de usuario y MCP. No modifica HubSpot ni Teamleader.',
+                'description' => 'Actualiza campos permitidos del perfil del representado en App Sefar. Solo administradores; cada cambio queda en la auditoria de usuario y MCP. No modifica HubSpot ni Teamleader.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -424,7 +424,7 @@ class SefarMcpAdminToolService
 
         $client = User::query()->find((int) $id);
         if (! $client || ! $client->hasRole('Cliente')) {
-            throw new RuntimeException('Cliente no encontrado.');
+            throw new RuntimeException('Representado no encontrado.');
         }
 
         return $client;

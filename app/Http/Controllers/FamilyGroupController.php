@@ -51,7 +51,7 @@ class FamilyGroupController extends Controller
         if (!$this->familyGroupService->clientExists($passport)) {
             return back()
                 ->withInput()
-                ->withErrors(['IDCliente' => 'No encontre un cliente o arbol con ese IDCliente.']);
+                ->withErrors(['IDCliente' => 'No encontre un representado o arbol con ese IDCliente.']);
         }
 
         $group = $this->familyGroupService->createCalculatedGroup(
@@ -102,7 +102,7 @@ class FamilyGroupController extends Controller
     {
         $added = $this->familyGroupService->recalculateMembers($familyGroup);
 
-        Alert::success('Coincidencias recalculadas', "Se agregaron {$added} cliente(s) al grupo.");
+        Alert::success('Coincidencias recalculadas', "Se agregaron {$added} representado(s) al grupo.");
 
         return redirect()->route('family-groups.show', $familyGroup);
     }
@@ -118,12 +118,12 @@ class FamilyGroupController extends Controller
         if (!$this->familyGroupService->clientExists($passport)) {
             return back()
                 ->withInput()
-                ->withErrors(['IDCliente' => 'No encontre un cliente o arbol con ese IDCliente.']);
+                ->withErrors(['IDCliente' => 'No encontre un representado o arbol con ese IDCliente.']);
         }
 
         $this->familyGroupService->addClientToGroup($familyGroup, $passport, 'manual');
 
-        Alert::success('Cliente agregado', 'El cliente se agrego al grupo familiar.');
+        Alert::success('Representado agregado', 'El representado se agrego al grupo familiar.');
 
         return redirect()->route('family-groups.show', $familyGroup);
     }
@@ -135,7 +135,7 @@ class FamilyGroupController extends Controller
         $name = $member->display_name ?: $member->IDCliente;
         $member->delete();
 
-        Alert::info('Cliente removido', 'Se saco del grupo familiar a: ' . $name);
+        Alert::info('Representado removido', 'Se saco del grupo familiar a: ' . $name);
 
         return redirect()->route('family-groups.show', $familyGroup);
     }

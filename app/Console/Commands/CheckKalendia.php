@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\{DB, Schema};
 class CheckKalendia extends Command
 {
     protected $signature = 'kalendia:check';
-    protected $description = 'Comprueba conexión, permisos y servicios sin crear clientes, citas ni pagos';
+    protected $description = 'Comprueba conexión, permisos y servicios sin crear representados, citas ni pagos';
 
     public function handle(KalendiaApi $api): int
     {
@@ -41,7 +41,7 @@ class CheckKalendia extends Command
                 $this->line('Eventos de Kalendia: '.(($states['pending'] ?? 0) + ($states['processing'] ?? 0) + ($states['retry'] ?? 0)).' pendientes; '
                     .($states['synced'] ?? 0).' sincronizados; '.($states['review'] ?? 0).' requieren revisión.');
             } else $this->line('Eventos de Kalendia: falta aplicar la migración del receptor.');
-            $this->line('Solo lectura. No se crearon clientes, citas ni pagos.');
+            $this->line('Solo lectura. No se crearon representados, citas ni pagos.');
             return $ok ? self::SUCCESS : self::FAILURE;
         } catch (KalendiaApiException $exception) {
             $this->error('No se pudo comprobar Kalendia'.($exception->httpStatus ? ' (HTTP '.$exception->httpStatus.')' : '').'. No se realizaron escrituras.');

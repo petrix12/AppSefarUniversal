@@ -99,7 +99,7 @@
                         <tr>
                             <th>Archivo</th>
                             <th>Estado</th>
-                            <th>Contacto / cliente</th>
+                            <th>Contacto / representado</th>
                             <th>Entidad Teamleader</th>
                             <th>Negocio app</th>
                             <th>Fechas</th>
@@ -171,7 +171,7 @@
                                             <br><small class="text-muted">{{ $company->email }}</small>
                                         @endif
                                     @else
-                                        <span class="text-muted">Sin cliente local</span>
+                                        <span class="text-muted">Sin representado local</span>
                                     @endif
                                 </td>
                                 <td style="min-width:180px">

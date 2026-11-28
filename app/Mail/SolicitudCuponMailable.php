@@ -20,7 +20,7 @@ class SolicitudCuponMailable extends Mailable
 
     public function build()
     {
-        return $this->subject('Solicitud para aprobar cupón - Cliente: '. $this->solicitud->nombre_cliente. " ". $this->solicitud->apellido_cliente)
+        return $this->subject('Solicitud para aprobar cupón - Representado: '. $this->solicitud->nombre_cliente. " ". $this->solicitud->apellido_cliente)
                     ->view('mail.aprobar-cupon')
                     ->with([
                         'solicitud' => $this->solicitud,

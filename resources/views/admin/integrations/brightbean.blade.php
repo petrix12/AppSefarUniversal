@@ -22,7 +22,7 @@
                 <label><input type="checkbox" name="ai_enabled" value="1" @checked(old('ai_enabled', $settings->ai_enabled))> Responder automáticamente con IA</label>
                 <p class="text-muted">Las respuestas automáticas respetan las pausas de los agentes y las reglas del canal. Los adjuntos se sincronizan; la IA responde a mensajes de texto.</p>
                 <div class="form-group">
-                    <label for="brightbean-instructions">Indicaciones de atención al cliente</label>
+                    <label for="brightbean-instructions">Indicaciones de atención al representado</label>
                     <textarea id="brightbean-instructions" name="instructions" rows="4" class="form-control" maxlength="10000">{{ old('instructions', $settings->instructions) }}</textarea>
                 </div>
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -33,14 +33,14 @@
         <p><a href="{{ route('admin.integrations.brightbean.index') }}">Ver todos los mensajes</a></p>
         @if($replyTarget)
             <div class="card">
-                <div class="card-header"><h2 class="h5 mb-0">Responder al cliente</h2></div>
+                <div class="card-header"><h2 class="h5 mb-0">Responder al representado</h2></div>
                 <div class="card-body">
                     <form method="POST" action="{{ route('admin.integrations.brightbean.send', $replyTarget) }}">
                         @csrf
                         <input type="hidden" name="request_id" value="{{ old('request_id', $replyRequestId) }}">
                         <label for="brightbean-reply">Tu respuesta</label>
                         <textarea id="brightbean-reply" name="text" rows="4" class="form-control mb-2" required maxlength="4000">{{ old('text') }}</textarea>
-                        <p class="text-muted">Se enviará por {{ $replyTarget->platform }} al cliente de esta conversación. Una respuesta manual pausa la IA durante al menos 30 minutos. El envío depende de la conexión y de las reglas del canal.</p>
+                        <p class="text-muted">Se enviará por {{ $replyTarget->platform }} al representado de esta conversación. Una respuesta manual pausa la IA durante al menos 30 minutos. El envío depende de la conexión y de las reglas del canal.</p>
                         <button type="submit" class="btn btn-primary">Enviar por BrightBean</button>
                     </form>
                 </div>

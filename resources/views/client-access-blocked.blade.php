@@ -3,7 +3,7 @@
         title="Acceso restringido"
         copy="Tu sesión está activa, pero el acceso a las ventanas de la aplicación está bloqueado."
         card-title="Acceso restringido"
-        card-eyebrow="Cuenta de cliente"
+        card-eyebrow="Cuenta de representado"
         card-id="client-access-blocked-title"
     >
         @php($blockedUser = auth()->user())
@@ -17,7 +17,7 @@
 
         <div style="margin:18px 0; padding:16px; border:1px solid #dbe5e9; border-radius:10px; color:#526b77;">
             <strong style="color:#243b45;">¿Necesitas aclarar este bloqueo?</strong>
-            <p style="margin:6px 0 10px;">Comunícate con atención al cliente para revisar tu caso.</p>
+            <p style="margin:6px 0 10px;">Comunícate con atención al representado para revisar tu caso.</p>
             <p style="margin:0 0 8px;">
                 Correo: <a href="mailto:{{ config('app.client_access_support_email') }}">{{ config('app.client_access_support_email') }}</a>
             </p>

@@ -69,10 +69,10 @@
                             </small>
                             <small class="form-text text-muted mt-2">
                                 Para actualizar un COS siempre desde sus fuentes, usa el permiso
-                                <code>cos:refresh</code> y <code>POST /api/v1/clientes/cos/refresh</code>,
+                                <code>cos:refresh</code> y <code>POST /api/v1/representados/cos/refresh</code>,
                                 enviando <code>email</code> y/o <code>passport</code>.
-                                Para añadir notas al cliente, usa <code>client-notes:create</code> y
-                                <code>POST /api/v1/clientes/{id}/notas</code>.
+                                Para añadir notas al representado, usa <code>client-notes:create</code> y
+                                <code>POST /api/v1/representados/{id}/notas</code>.
                             </small>
                         </div>
                     </div>

@@ -10,8 +10,8 @@ class CosPortfolioReport extends Command
     protected $signature = 'cos:portfolio
         {--owner= : Limitar a un owner interno}
         {--output= : Guardar el informe completo en JSON}
-        {--debtors-csv= : Guardar todos los clientes con saldo conocido en CSV}
-        {--certified-only : Limitar el CSV a clientes con certificado registrado}
+        {--debtors-csv= : Guardar todos los representados con saldo conocido en CSV}
+        {--certified-only : Limitar el CSV a representados con certificado registrado}
         {--apply-associations : Guardar únicamente las asociaciones inequívocas en la base local}';
 
     protected $description = 'Lista toda la cartera, certificados, saldos y asociaciones por reglas, sin IA ni peticiones externas.';
@@ -41,7 +41,7 @@ class CosPortfolioReport extends Command
                 && (! $this->option('certified-only') || $row['has_certificate']));
             $portfolio->writeCsv($stream, $rows);
             fclose($stream);
-            $this->info('Lista completa de clientes con saldo: '.$path.' ('.count($rows).').');
+            $this->info('Lista completa de representados con saldo: '.$path.' ('.count($rows).').');
         }
         $this->line('Los saldos son importados. Los importes pendientes de revisión no se suman al saldo conocido.');
 

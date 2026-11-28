@@ -214,7 +214,53 @@ class MarketingCampaignController extends Controller
     public function templates()
     {
         $templates = MarketingTemplate::latest()->paginate(20);
-        return view('marketing.templates', compact('templates'));
+        return view('marketing.templates', ['templates' => $templates, 'editingTemplate' => null, 'emailShell' => $this->emailShell(),
+            ...$this->templatePromptData()]);
+    }
+
+    public function editTemplate(MarketingTemplate $template)
+    {
+        return view('marketing.templates', ['templates' => MarketingTemplate::latest()->paginate(20),
+            'editingTemplate' => $template, 'emailShell' => $this->emailShell(), ...$this->templatePromptData()]);
+    }
+
+    private function templatePromptData(): array
+    {
+        $generator = app(\App\Services\EmailTemplateGenerator::class);
+        return ['templatePrompt' => $generator->savedPrompt(), 'defaultTemplatePrompt' => $generator->instructions()];
+    }
+
+    public function saveTemplatePrompt(Request $request, \App\Services\EmailTemplateGenerator $generator)
+    {
+        $data = $request->validate(['system_prompt' => ['required', 'string', 'min:30', 'max:12000']]);
+        $generator->savePrompt($data['system_prompt'], $request->user()->id);
+        return response()->json(['message' => 'Prompt guardado. Se usará para generar los próximos correos.']);
+    }
+
+    public function updateTemplate(Request $request, MarketingTemplate $template, MarketingEmailRenderer $renderer)
+    {
+        $data = $request->validate(['name' => ['required', 'string', 'max:150'], 'subject' => ['nullable', 'string', 'max:255'],
+            'body_html' => ['required', 'string', 'max:1000000']]);
+        $template->update(['name' => $data['name'], 'subject' => $data['subject'] ?? null,
+            'body_html' => $renderer->sanitize($data['body_html']), 'body_text' => $renderer->plainText($data['body_html'])]);
+        return redirect()->route('marketing.templates.edit', $template)->with('success', 'Plantilla actualizada.');
+    }
+
+    public function generateTemplate(Request $request, \App\Services\EmailTemplateGenerator $generator)
+    {
+        $data = $request->validate(['prompt' => ['required', 'string', 'min:10', 'max:4000'],
+            'system_prompt' => ['sometimes', 'required', 'string', 'min:30', 'max:12000'],
+            'action_url' => ['nullable', 'url:https', 'max:2000']]);
+        return response()->json($generator->generate($data['prompt'], $data['action_url'] ?? rtrim(config('app.url'), '/'), $data['system_prompt'] ?? null));
+    }
+
+    private function emailShell(): string
+    {
+        $html = view('mail.layouts.base', ['slot' => new \Illuminate\Support\HtmlString('%%SEFAR_EMAIL_CONTENT%%'),
+            'preheader' => '%%SEFAR_EMAIL_PREHEADER%%'])->render();
+        preg_match('/<style>(.*?)<\/style>/is', $html, $style);
+        preg_match('/<body\b[^>]*>(.*)<\/body>/is', $html, $body);
+        return '<style>'.($style[1] ?? '').'</style>'.($body[1] ?? $html);
     }
 
     public function storeTemplate(Request $request, MarketingEmailRenderer $renderer)
@@ -228,7 +274,7 @@ class MarketingCampaignController extends Controller
             'name' => $data['name'],
             'subject' => $data['subject'] ?? null,
             'body_html' => $renderer->sanitize($data['body_html']),
-            'body_text' => trim(strip_tags($data['body_html'])),
+            'body_text' => $renderer->plainText($data['body_html']),
             'created_by_user_id' => $request->user()->id,
         ]);
         return back()->with('success', 'Plantilla guardada.');
@@ -298,7 +344,7 @@ class MarketingCampaignController extends Controller
             'name' => $data['name'], 'subject' => $data['subject'], 'from_email' => $data['from_email'],
             'from_name' => $data['from_name'] ?? null, 'reply_to' => $data['reply_to'] ?? null,
             'marketing_list_id' => $data['marketing_list_id'], 'marketing_template_id' => $data['marketing_template_id'] ?? null,
-            'body_html' => $renderer->sanitize($data['body_html']), 'body_text' => $data['body_text'] ?? trim(strip_tags($data['body_html'])),
+            'body_html' => $renderer->sanitize($data['body_html']), 'body_text' => $data['body_text'] ?? $renderer->plainText($data['body_html']),
             'status' => $data['delivery_mode'] === 'scheduled' ? MarketingCampaign::STATUS_SCHEDULED : MarketingCampaign::STATUS_DRAFT,
             'scheduled_at' => $data['delivery_mode'] === 'scheduled' ? $data['scheduled_at'] : null,
         ];

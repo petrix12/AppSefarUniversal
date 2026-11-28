@@ -38,7 +38,7 @@ class CrmQuoteController extends Controller
         return view('crm.quotes.form', [
             'quote' => new CrmQuote(['currency' => 'EUR', 'status' => 'draft', 'lead_id' => $lead?->id, 'client_id' => $client?->id]),
             'items' => [['description' => '', 'quantity' => 1, 'unit_price' => 0]],
-            'contactLabel' => $lead ? trim($lead->nombre . ' · ' . ($lead->email ?: '')) . ' (Lead)' : ($client ? trim($client->name . ' · ' . ($client->email ?: '')) . ' (Cliente)' : ''),
+            'contactLabel' => $lead ? trim($lead->nombre . ' · ' . ($lead->email ?: '')) . ' (Lead)' : ($client ? trim($client->name . ' · ' . ($client->email ?: '')) . ' (Representado)' : ''),
             'action' => route('crm.quotes.store'), 'method' => 'POST',
             'statuses' => CrmQuote::STATUSES,
         ]);
@@ -52,7 +52,7 @@ class CrmQuoteController extends Controller
             'items' => $quote->items->map(fn (CrmQuoteItem $item) => $item->only(['description', 'quantity', 'unit_price']))->all(),
             'contactLabel' => $quote->lead
                 ? trim($quote->lead->nombre . ' · ' . ($quote->lead->email ?: '')) . ' (Lead)'
-                : ($quote->client ? trim($quote->client->name . ' · ' . ($quote->client->email ?: '')) . ' (Cliente)' : ''),
+                : ($quote->client ? trim($quote->client->name . ' · ' . ($quote->client->email ?: '')) . ' (Representado)' : ''),
             'action' => route('crm.quotes.update', $quote), 'method' => 'PUT',
             'statuses' => CrmQuote::STATUSES,
         ]);
@@ -101,7 +101,7 @@ class CrmQuoteController extends Controller
         $leadId = $request->integer('lead_id') ?: null;
         $clientId = $request->integer('client_id') ?: null;
         if ((bool) $leadId === (bool) $clientId) {
-            throw ValidationException::withMessages(['contact_search' => 'Selecciona exactamente un lead o un cliente de la lista.']);
+            throw ValidationException::withMessages(['contact_search' => 'Selecciona exactamente un lead o un representado de la lista.']);
         }
         if ($clientId) {
             if (! User::clients()->whereKey($clientId)->exists()) {

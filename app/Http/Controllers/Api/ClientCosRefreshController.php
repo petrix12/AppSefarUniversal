@@ -66,7 +66,7 @@ class ClientCosRefreshController extends Controller
 
     public function __invoke(User $cliente, ClientCosSnapshotService $snapshots): JsonResponse
     {
-        abort_unless($cliente->hasRole('Cliente'), 404, 'Cliente no encontrado.');
+        abort_unless($cliente->hasRole('Cliente'), 404, 'Representado no encontrado.');
 
         return $this->refreshCos($cliente, $snapshots, 'id');
     }

@@ -3,7 +3,7 @@
 @section('title', 'Prueba Agclientes')
 
 @section('content_header')
-    <h1>Generar enlace para registrar cliente</h1>
+    <h1>Generar enlace para registrar representado</h1>
 @stop
 
 @section('content')
@@ -11,7 +11,7 @@
     <form action="{{ route('test.capturar_parametros_get') }}" method ="GET">
         <div class="shadow overflow-hidden sm:rounded-md">
             <div class="container">
-                <p class="my-2 ml-2 text-bold text-blue-600">Datos Clientes:</p>
+                <p class="my-2 ml-2 text-bold text-blue-600">Datos Representados:</p>
                 <div class="md:flex ms:flex-wrap">
                     <div class="px-1 py-2 m-2 flex-1">    {{-- pasaporte --}}
                         <div>

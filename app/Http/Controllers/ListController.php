@@ -372,7 +372,7 @@ class ListController extends Controller
             } catch (\Throwable $e) {
                 $report['import_errors']++;
                 $notAddedPassports[] = $candidate['passport'];
-                $this->pushImportIssue($report, "Fila {$candidate['row_number']} ({$candidate['passport']}): no se pudo crear el cliente.");
+                $this->pushImportIssue($report, "Fila {$candidate['row_number']} ({$candidate['passport']}): no se pudo crear el representado.");
             }
         }
 

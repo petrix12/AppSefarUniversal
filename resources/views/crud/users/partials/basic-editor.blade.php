@@ -142,7 +142,7 @@
             class="mr-2"
             @checked(in_array($role->name, (array) old('roles', $userRoleNames), true))
           >
-          <span>{{ $role->name }}</span>
+          <span>{{ \App\Support\RepresentedLanguage::label($role->name) }}</span>
         </label>
       </div>
     @endforeach

@@ -79,7 +79,7 @@
                     </div>
                     <div class="col-md-5 mb-2">
                         <label for="q">Buscar</label>
-                        <input type="text" id="q" name="q" class="form-control" value="{{ $query }}" placeholder="email, ruta, evento, cliente, token...">
+                        <input type="text" id="q" name="q" class="form-control" value="{{ $query }}" placeholder="email, ruta, evento, representado, token...">
                     </div>
                     <div class="col-md-2 mb-2">
                         <label for="limit">Limite</label>

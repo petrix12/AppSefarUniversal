@@ -77,7 +77,7 @@
                                                                 @endif
                                                             </div>
                                                             <div class="ml-3 text-sm">
-                                                                <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ $role->name }}</label>
+                                                                <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ \App\Support\RepresentedLanguage::label($role->name) }}</label>
                                                             </div>
                                                         </div> 
                                                     </div>

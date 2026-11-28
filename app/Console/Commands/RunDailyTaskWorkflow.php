@@ -71,8 +71,8 @@ class RunDailyTaskWorkflow extends Command
         if (! $skipNotify) {
             $this->line('');
             $this->info($forceReassign
-                ? 'Paso 1/3: revisar tareas vencidas y reasignar clientes.'
-                : 'Paso 1/2: revisar tareas vencidas y reasignar clientes.');
+                ? 'Paso 1/3: revisar tareas vencidas y reasignar representados.'
+                : 'Paso 1/2: revisar tareas vencidas y reasignar representados.');
             $notifyExitCode = $this->call('tasks:notify-unclosed', $notifyOptions);
 
             if ($notifyExitCode !== self::SUCCESS) {

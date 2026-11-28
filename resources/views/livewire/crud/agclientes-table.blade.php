@@ -24,17 +24,17 @@
             {{-- SOLO CLIENTES --}}
             <div class="flex justify-between items-center">
                 <div>
-                    <label for="solo_clientes" class="px-3 block text-sm font-medium text-gray-700" title="Ver solo clientes">Ver</label>
+                    <label for="solo_clientes" class="px-3 block text-sm font-medium text-gray-700" title="Ver solo representados">Ver</label>
                     <select wire:model.live="solo_clientes" name="solo_clientes"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="{{ true }}">Solo clientes</option>
-                        <option value="{{ false }}">Clientes y ancestros</option>
+                        <option value="{{ true }}">Solo representados</option>
+                        <option value="{{ false }}">Representados y ancestros</option>
                     </select>
                 </div>
                 <div>
                     <label wire:click="forma_ordenar" for="ordenar" class="px-3 block text-sm font-medium text-gray-700" title="Haga clic aquí para invertir el orden">Ordenar por</label>
                     <select wire:model.live="ordenar" name="ordenar"class="w-44 mt-1 block py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="FRegistro">Fecha de registro</option>
-                        <option value="IDCliente">ID Cliente</option>
+                        <option value="IDCliente">ID Representado</option>
                         <option value="Apellidos">Apellidos</option>
                         <option value="AnhoNac">Año de nacimiento</option>
                         <option value="AnhoDef">Año de defunción</option>
@@ -94,7 +94,7 @@
                                 </th>
                                 <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
                                     {{-- {{ __('Client id') }} --}}
-                                    <span title="ID Cliente">IDC</span>
+                                    <span title="ID Representado">IDC</span>
                                 </th>
                                 @if (!$solo_clientes)
                                 <th scope="col" class="px-1 py-2 text-center text-xs text-gray-500 uppercase tracking-wider">
@@ -153,7 +153,7 @@
                             </td>
                             @if (!$solo_clientes)
                             <td class="px-1 py-2 text-xs text-center">
-                                <small>{{ GetPersona($agcliente->IDPersona) }}</small>
+                                <small>{{ \App\Support\RepresentedLanguage::label(GetPersona($agcliente->IDPersona)) }}</small>
                             </td>
                             @endif
                             <td class="px-1 py-2 text-sm text-center">

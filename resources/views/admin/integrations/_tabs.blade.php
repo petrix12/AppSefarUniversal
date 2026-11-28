@@ -1,4 +1,7 @@
 <div class="btn-group mt-2 mt-md-0">
+    <a href="{{ route('admin.integrations.app-mail.index') }}" class="btn {{ request()->routeIs('admin.integrations.app-mail.*') ? 'btn-primary' : 'btn-outline-primary' }}">
+        <i class="fas fa-envelope mr-1"></i> Correo de la app
+    </a>
     <a href="{{ route('admin.integrations.api-tokens.index') }}" class="btn {{ request()->routeIs('admin.integrations.api-tokens.*') ? 'btn-primary' : 'btn-outline-primary' }}">
         <i class="fas fa-key mr-1"></i> Tokens API
     </a>

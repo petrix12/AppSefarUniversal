@@ -48,7 +48,7 @@ class RestrictClientRoutes
                 && in_array($route, self::GENEALOGIST_ROUTES, true);
 
             abort_unless($genealogistTreeAccess || in_array($route, self::ALLOWED_ROUTES, true), 403,
-                'Esta ruta es de uso interno y no está disponible para clientes.');
+                'Esta ruta es de uso interno y no está disponible para representados.');
         }
 
         return $next($request);

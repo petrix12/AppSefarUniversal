@@ -53,7 +53,7 @@
                         @if ($editar)
                             Editar: {{ $nombre }}    
                         @else
-                            Añadir: {{ $persona }}
+                            Añadir: {{ \App\Support\RepresentedLanguage::label($persona) }}
                         @endif
                     </div>
                 </div>

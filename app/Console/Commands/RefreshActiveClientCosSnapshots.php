@@ -12,10 +12,10 @@ use Throwable;
 class RefreshActiveClientCosSnapshots extends Command
 {
     protected $signature = 'cos:refresh-active-clients
-        {--limit= : Máximo de clientes a procesar en esta corrida}
-        {--force : Incluye clientes cuyo caché COS todavía no ha vencido}';
+        {--limit= : Máximo de representados a procesar en esta corrida}
+        {--force : Incluye representados cuyo caché COS todavía no ha vencido}';
 
-    protected $description = 'Actualiza gradualmente el COS vencido de clientes con pay > 1 y contrato = 1.';
+    protected $description = 'Actualiza gradualmente el COS vencido de representados con pay > 1 y contrato = 1.';
 
     public function handle(ClientCosSnapshotService $snapshots): int
     {
@@ -28,7 +28,7 @@ class RefreshActiveClientCosSnapshots extends Command
             ->get();
 
         if ($clients->isEmpty()) {
-            $this->info('No hay clientes elegibles con COS vencido.');
+            $this->info('No hay representados elegibles con COS vencido.');
 
             return self::SUCCESS;
         }
@@ -52,16 +52,16 @@ class RefreshActiveClientCosSnapshots extends Command
                     $changed++;
                 }
 
-                $this->line("Cliente {$client->id}: COS actualizado" . ($hasChanged ? ' (con cambio de estatus).' : '.'));
+                $this->line("Representado {$client->id}: COS actualizado" . ($hasChanged ? ' (con cambio de estatus).' : '.'));
             } catch (Throwable $exception) {
                 $failed++;
 
-                Log::warning('COS automático: no se pudo actualizar cliente.', [
+                Log::warning('COS automático: no se pudo actualizar representado.', [
                     'user_id' => $client->id,
                     'error' => $exception->getMessage(),
                 ]);
 
-                $this->warn("Cliente {$client->id}: no se pudo actualizar.");
+                $this->warn("Representado {$client->id}: no se pudo actualizar.");
             }
 
             if ($delaySeconds > 0 && $index < $clients->count() - 1) {

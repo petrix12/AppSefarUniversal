@@ -247,7 +247,7 @@ class ServicioController extends Controller
             'tipo' => 'tipo',
             'descripcion_publica' => 'descripción pública',
             'activo' => 'estado activo',
-            'visible_cliente' => 'visibilidad para clientes',
+            'visible_cliente' => 'visibilidad para representados',
             'moneda' => 'moneda',
             'duracion_minutos' => 'duración',
             'requiere_agenda' => 'requerimiento de agenda',

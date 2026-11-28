@@ -27,7 +27,7 @@ class NotifyUnclosedTasks extends Command
         {--source-user-id= : Procesa solo tareas vencidas asignadas a este asesor}
         {--dry-run : Solo muestra cambios, no actualiza nada}';
 
-    protected $description = 'Cancela tareas comerciales abiertas vencidas por 1 dia y reasigna el cliente en BD y HubSpot.';
+    protected $description = 'Cancela tareas comerciales abiertas vencidas por 1 dia y reasigna el representado en BD y HubSpot.';
 
     public function handle(HubspotService $hubspotService, HubspotDealOwnerSyncService $dealOwnerSync): int
     {
@@ -97,7 +97,7 @@ class NotifyUnclosedTasks extends Command
                 $contact = $task->contact;
 
                 if (!$contact) {
-                    $this->warn("La tarea {$task->id} no tiene cliente válido.");
+                    $this->warn("La tarea {$task->id} no tiene representado válido.");
                     continue;
                 }
 
@@ -112,7 +112,7 @@ class NotifyUnclosedTasks extends Command
                 }
 
                 $this->line(
-                    "Tarea {$task->id} | Cliente {$contact->id} {$contact->name} → Nuevo owner: {$advisor->name}"
+                    "Tarea {$task->id} | Representado {$contact->id} {$contact->name} → Nuevo owner: {$advisor->name}"
                 );
 
                 if (!$dryRun) {
@@ -208,7 +208,7 @@ class NotifyUnclosedTasks extends Command
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            Log::channel('tasks')->error('Error cancelando tareas vencidas y reasignando clientes', [
+            Log::channel('tasks')->error('Error cancelando tareas vencidas y reasignando representados', [
                 'error' => $e->getMessage(),
             ]);
 
@@ -239,7 +239,7 @@ class NotifyUnclosedTasks extends Command
         }
 
         $this->info($dryRun ? '🧪 Dry-run completado. No se actualizó nada.' : '✅ Proceso completado.');
-        $this->info("Clientes reasignados en BD: {$reassignedClients}");
+        $this->info("Representados reasignados en BD: {$reassignedClients}");
         $this->info("Contactos actualizados en HubSpot: {$hubspotUpdated}");
         $this->info("Negocios actualizados en HubSpot: {$hubspotDealsUpdated}");
         $this->info("HubSpot omitidos por configuracion de lista: {$hubspotSkippedByList}");

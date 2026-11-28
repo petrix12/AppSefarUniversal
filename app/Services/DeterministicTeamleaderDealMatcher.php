@@ -79,7 +79,7 @@ class DeterministicTeamleaderDealMatcher
             $scores = $matrix[(string) $deal['id']] ?? [];
             uasort($scores, fn ($a, $b) => $b['score'] <=> $a['score']);
             $projectId = array_key_first($scores);
-            $best = $projectId !== null ? $scores[$projectId] : ['score' => 0, 'reason' => 'Sin candidatos del mismo cliente'];
+            $best = $projectId !== null ? $scores[$projectId] : ['score' => 0, 'reason' => 'Sin candidatos del mismo representado'];
             $next = array_values($scores)[1]['score'] ?? 0;
             $reverse = [];
             foreach ($matrix as $dealId => $candidates) {

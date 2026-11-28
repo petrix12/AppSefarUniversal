@@ -71,7 +71,7 @@ class ClientSupportTicketService
             $this->syncLocalOwnerData($client, $ownerId, $owner);
         }
 
-        $subject = ($isTest ? '[PRUEBA] ' : '') . '[' . $topicLabel . '] Solicitud de soporte del cliente: ' . $this->clientLabel($client);
+        $subject = ($isTest ? '[PRUEBA] ' : '') . '[' . $topicLabel . '] Solicitud de soporte del representado: ' . $this->clientLabel($client);
         $content = $this->buildTicketContent($client, $requester, $description, $topicLabel, $source, $owner, $isTest, $contactId);
         $ticket = null;
         $ticketError = null;
@@ -281,7 +281,7 @@ class ClientSupportTicketService
         $clientEmail = strtolower(trim((string) $client->email));
 
         if (! filter_var($clientEmail, FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('El cliente no tiene un correo valido para enviar la solicitud.');
+            throw new \InvalidArgumentException('El representado no tiene un correo valido para enviar la solicitud.');
         }
 
         $to = $copyHubspotInbox ? self::HUBSPOT_INBOX_EMAIL : self::SUPPORT_EMAILS[0];
@@ -323,10 +323,10 @@ class ClientSupportTicketService
             'Tema: ' . $topic,
             'Fecha: ' . now()->format('Y-m-d H:i:s'),
             '',
-            'Cliente: ' . $this->clientLabel($client),
-            'Email cliente: ' . ($client->email ?: '-'),
-            'Pasaporte cliente: ' . ($client->passport ?: '-'),
-            'ID app cliente: ' . $client->id,
+            'Representado: ' . $this->clientLabel($client),
+            'Email representado: ' . ($client->email ?: '-'),
+            'Pasaporte representado: ' . ($client->passport ?: '-'),
+            'ID app representado: ' . $client->id,
             'ID contacto HubSpot: ' . ($contactId ?: '-'),
             '',
             'Solicitante: ' . ($requester->name ?: "Usuario #{$requester->id}") . " (ID {$requester->id})",
@@ -352,7 +352,7 @@ class ClientSupportTicketService
 
     private function clientLabel(User $client): string
     {
-        return $client->name ?: trim(($client->nombres ?? '') . ' ' . ($client->apellidos ?? '')) ?: "Cliente #{$client->id}";
+        return $client->name ?: trim(($client->nombres ?? '') . ' ' . ($client->apellidos ?? '')) ?: "Representado #{$client->id}";
     }
 
     private function ownerName(array $owner): string

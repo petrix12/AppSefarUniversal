@@ -11,7 +11,7 @@ class ClientNoteController extends Controller
 {
     public function store(StoreClientNoteRequest $request, User $cliente): JsonResponse
     {
-        abort_unless($cliente->hasRole('Cliente'), 404, 'Cliente no encontrado.');
+        abort_unless($cliente->hasRole('Cliente'), 404, 'Representado no encontrado.');
 
         $author = $request->user();
         $note = $cliente->notes()->create([

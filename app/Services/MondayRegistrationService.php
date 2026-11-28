@@ -224,7 +224,7 @@ class MondayRegistrationService
                 }
             }
 
-            Log::info('Cliente registrado en Monday según la configuración del servicio', [
+            Log::info('Representado registrado en Monday según la configuración del servicio', [
                 'user_id' => $user->id,
                 'servicio_id' => $servicio->id,
                 'board_id' => $servicio->monday_board_id,
@@ -321,7 +321,7 @@ class MondayRegistrationService
             'last_error' => Str::limit($error, 65000, ''),
         ])->save();
 
-        Log::error('No se pudo registrar el cliente en Monday', [
+        Log::error('No se pudo registrar el representado en Monday', [
             'user_id' => $registration->user_id,
             'servicio_id' => $registration->servicio_id,
             'board_id' => $registration->board_id,

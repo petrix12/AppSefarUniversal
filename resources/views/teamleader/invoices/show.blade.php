@@ -90,7 +90,7 @@
 
         {{-- Cliente --}}
         <div class="card card-outline card-secondary">
-            <div class="card-header"><h6 class="mb-0"><i class="fas fa-user mr-1"></i> Cliente</h6></div>
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-user mr-1"></i> Representado</h6></div>
             <div class="card-body">
                 <strong>{{ $invoice->customer_name ?? '—' }}</strong><br>
                 @if($contact)

@@ -217,7 +217,7 @@
                            target="_blank"
                            style="display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:600; color:#2563eb; text-decoration:none; padding:.25rem .5rem; border-radius:.4rem; background:#eff6ff; border:1px solid #dbeafe;">
                             <i class="fas fa-external-link-alt" style="font-size:.7rem;"></i>
-                            Ir al COS del Cliente
+                            Ir al COS del Representado
                         </a>
                     </div>
                 @endif
@@ -267,7 +267,7 @@
             <div class="hint-box">
                 <i class="fas fa-info-circle" style="margin-top:.15rem;"></i>
                 <span>
-                    Esta tarea es interna. Al completarla no se cambia el propietario del cliente, no se reasigna ningun negocio y no entra al flujo comercial de ventas.
+                    Esta tarea es interna. Al completarla no se cambia el propietario del representado, no se reasigna ningun negocio y no entra al flujo comercial de ventas.
                 </span>
             </div>
 
@@ -295,7 +295,7 @@
         <div class="hint-box">
             <i class="fas fa-info-circle" style="margin-top:.15rem;"></i>
             <span>
-                Solo se marca como contactado cuando el cliente responde y queda una evidencia registrada. Si estas esperando respuesta, la tarea sigue abierta como seguimiento para el siguiente dia.
+                Solo se marca como contactado cuando el representado responde y queda una evidencia registrada. Si estas esperando respuesta, la tarea sigue abierta como seguimiento para el siguiente dia.
             </span>
         </div>
 
@@ -341,7 +341,7 @@
                 <textarea name="contact_proof" rows="3" maxlength="2000" placeholder="Ej: enlace al chat, resumen verificable de la respuesta, numero desde el que respondio" class="modern-input">{{ old('contact_proof', $task->contact_proof) }}</textarea>
                 <p style="font-size:.72rem; color:#9ca3af; margin-top:.35rem;">
                     <i class="fas fa-shield-alt mr-1"></i>
-                    Obligatoria cuando marcas que el cliente respondio.
+                    Obligatoria cuando marcas que el representado respondio.
                 </p>
                 @error('contact_proof')
                     <p style="color:#ef4444; font-size:.75rem; margin-top:.25rem;">{{ $message }}</p>

@@ -18,7 +18,7 @@
                 <input type="hidden" name="rol" value="Cliente" />
                 <div class="shadow overflow-hidden sm:rounded-md">
                     <div class="container">
-                        <p class="my-2 ml-2 text-bold text-blue-600">Datos Clientes:</p>
+                        <p class="my-2 ml-2 text-bold text-blue-600">Datos Representados:</p>
                         <div class="md:flex ms:flex-wrap">
                             <div class="px-1 py-2 m-2 flex-1">    {{-- passport --}}
                                 <div>

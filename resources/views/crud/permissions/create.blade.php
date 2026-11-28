@@ -64,7 +64,7 @@
                                                                 <input name="{{ "role" . $role->id }}" type="checkbox" class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
                                                             </div>
                                                             <div class="ml-3 text-sm">
-                                                                <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ $role->name }}</label>
+                                                                <label for="{{ "role" . $role->id }}" class="font-medium text-gray-700">{{ \App\Support\RepresentedLanguage::label($role->name) }}</label>
                                                             </div>
                                                         </div> 
                                                     </div>

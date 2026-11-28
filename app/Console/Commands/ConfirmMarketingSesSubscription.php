@@ -11,11 +11,14 @@ use Throwable;
 class ConfirmMarketingSesSubscription extends Command
 {
     protected $signature = 'marketing:confirm-sns {--topic=} {--write}';
-    protected $description = 'Inspecciona o confirma una suscripción de Amazon SNS para marketing';
+    protected $aliases = ['app-mail:confirm-sns'];
+    protected $description = 'Inspecciona o confirma una suscripción de Amazon SNS para correos de la app o campañas';
 
     public function handle(SnsMessageVerifier $verifier): int
     {
-        $allowed = array_values(array_unique(array_filter((array) config('marketing.ses_sns_topic_arns', []), 'is_string')));
+        $allowed = array_values(array_unique(array_filter(array_merge(
+            (array) config('marketing.ses_sns_topic_arns', []), (array) config('app_mail.ses_sns_topic_arns', [])
+        ), 'is_string')));
         $topic = $this->option('topic');
         if ($topic !== null && $topic !== '') {
             if (!in_array($topic, $allowed, true)) {
@@ -44,7 +47,7 @@ class ConfirmMarketingSesSubscription extends Command
             return self::FAILURE;
         }
         try {
-            if (!$verifier->verify($message)) {
+            if (!$verifier->verify($message, $allowed)) {
                 $this->error('Firma SNS inválida.');
                 return self::FAILURE;
             }

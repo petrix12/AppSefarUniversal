@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 class CrmReconcileContacts extends Command
 {
     protected $signature = 'crm:reconcile-contacts {provider : hubspot or teamleader} {--after=0} {--limit=50}';
-    protected $description = 'Carga o concilia contactos ya vinculados a cuentas Cliente, excluyendo leads.';
+    protected $description = 'Carga o concilia contactos ya vinculados a cuentas Representado, excluyendo leads.';
 
     public function handle(CrmContactMirrorService $mirror): int
     {

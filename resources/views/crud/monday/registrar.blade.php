@@ -22,7 +22,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
             Swal.fire({
                 icon: 'error',
                 title: 'No se encontró a ningún usuario con el pasaporte ingresado',
-                text: 'Utiliza el número de pasaporte del cliente, no su correo electrónico.',
+                text: 'Utiliza el número de pasaporte del representado, no su correo electrónico.',
                 showConfirmButton: false,
                 timer: 5000
             });
@@ -33,7 +33,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
         <script type="text/javascript">
             Swal.fire({
                 icon: 'success',
-                title: 'Cliente registrado en Monday',
+                title: 'Representado registrado en Monday',
                 showConfirmButton: false,
                 timer: 5000
             });
@@ -44,7 +44,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
-                title: 'El cliente no ha rellenado el segundo formulario de Hubspot (completación)',
+                title: 'El representado no ha rellenado el segundo formulario de Hubspot (completación)',
                 showConfirmButton: false,
                 timer: 5000
             });
@@ -55,7 +55,7 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
         <script type="text/javascript">
             Swal.fire({
                 icon: 'error',
-                title: 'No se pudo registrar al cliente en Monday',
+                title: 'No se pudo registrar al representado en Monday',
                 text: 'Monday no confirmó el registro. Inténtalo de nuevo; si persiste, solicita revisar la integración.',
                 confirmButtonText: 'Aceptar'
             });
@@ -67,9 +67,9 @@ src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js">
         <center>
             <form action="{{ route('registrarMD') }}" method="POST">
                 <div style="width: 80%;">
-                    <h4>Pasaporte del Cliente</h4><br>
+                    <h4>Pasaporte del Representado</h4><br>
                     @csrf
-                    <input type="text" name="passport" placeholder="Número de Pasaporte del Cliente" value="{{ old('passport') }}" required maxlength="20">
+                    <input type="text" name="passport" placeholder="Número de Pasaporte del Representado" value="{{ old('passport') }}" required maxlength="20">
                     @error('passport')
                         <p class="text-danger" role="alert">{{ $message }}</p>
                     @enderror

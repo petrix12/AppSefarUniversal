@@ -11,7 +11,7 @@ class AnalyzeTeamleaderProjectPayments extends Command
     protected $signature = 'teamleader:analyze-project-payments
         {--limit=50 : Maximo de proyectos a analizar}
         {--project= : ID de proyecto Teamleader especifico}
-        {--customer= : ID de contacto/cliente Teamleader}
+        {--customer= : ID de contacto/representado Teamleader}
         {--only-with-balance : Mostrar solo fases con saldo pendiente}
         {--json : Imprimir resultado completo en JSON}';
 

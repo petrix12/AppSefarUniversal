@@ -4,7 +4,7 @@
 @section('content')
     @include('kalendia.partials.messages')
     @if($apiUnavailable)<div class="alert alert-warning">No se pudo consultar el catálogo de Kalendia. Se conservan las consultas guardadas.</div>@endif
-    <p>Los servicios y precios se importan automáticamente desde Kalendia. El cliente paga con Stripe en App Sefar y después elige un horario para su consulta.</p>
+    <p>Los servicios y precios se importan automáticamente desde Kalendia. El representado paga con Stripe en App Sefar y después elige un horario para su consulta.</p>
     <form method="POST" action="{{ route('admin.kalendia.offers.sync') }}" class="mb-3">@csrf<button class="btn btn-primary" type="submit"><i class="fas fa-sync-alt" aria-hidden="true"></i> Actualizar servicios y precios de Kalendia</button></form>
     <div class="alert alert-info">Se publican servicios activos con precio positivo en EUR. Las reuniones gratuitas mantienen su flujo incluido. Los nombres y precios importados se actualizan desde Kalendia; puedes decidir su visibilidad.</div>
     @php($forms = $offers->concat([null]))
@@ -24,7 +24,7 @@
                 @if($offer && !collect($services)->contains('id', $offer->remote_service_id))<option value="{{ $offer->remote_service_id }}" selected>Servicio guardado · {{ $offer->remote_service_id }}</option>@endif
                 @foreach($services as $service)<option value="{{ $service['id'] }}" @selected($offer?->remote_service_id === $service['id'])>{{ $service['name'] }} · Kalendia: {{ is_numeric($service['price']) ? format_money($service['price'],2).' '.($service['currency'] ?? 'EUR') : 'precio sin confirmar' }}</option>@endforeach
             </select></div>
-            <div class="form-group"><label for="offer-description-{{ $offer?->id ?? 'new' }}">Descripción para el cliente</label><textarea id="offer-description-{{ $offer?->id ?? 'new' }}" name="description" class="form-control" maxlength="3000" @readonly($offer?->catalog_service_id)>{{ $offer?->description }}</textarea></div>
+            <div class="form-group"><label for="offer-description-{{ $offer?->id ?? 'new' }}">Descripción para el representado</label><textarea id="offer-description-{{ $offer?->id ?? 'new' }}" name="description" class="form-control" maxlength="3000" @readonly($offer?->catalog_service_id)>{{ $offer?->description }}</textarea></div>
             <div class="form-check mb-3"><input type="hidden" name="active" value="0"><input type="checkbox" id="offer-active-{{ $offer?->id ?? 'new' }}" name="active" value="1" class="form-check-input" @checked($offer?->active ?? true)><label class="form-check-label" for="offer-active-{{ $offer?->id ?? 'new' }}">Visible en el catálogo de consultas</label></div>
             <button class="btn btn-primary" type="submit">Guardar consulta</button>
             @if($offer)<span class="ml-2 text-muted">{{ $offer->hasPrice() ? 'Precio configurado' : 'Sin contratación habilitada' }}</span>@endif

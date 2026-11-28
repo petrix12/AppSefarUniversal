@@ -51,7 +51,7 @@
                 name="search"
                 value="{{ request('search') }}"
                 class="form-control form-control-sm"
-                placeholder="Número, cliente..."
+                placeholder="Número, representado..."
                 style="min-width:220px"
             >
 
@@ -85,7 +85,7 @@
                 <thead class="thead-light">
                     <tr>
                         <th>Número</th>
-                        <th>Cliente</th>
+                        <th>Representado</th>
                         <th>Fecha</th>
                         <th>Vencimiento</th>
                         <th>Sin IVA</th>

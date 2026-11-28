@@ -103,18 +103,18 @@ class HubspotIdentityReviews extends Command
     private function assignClient(string $hubspotId, ?int $localId): void
     {
         if (! $localId) {
-            throw new \InvalidArgumentException('--local-id es obligatorio para asignar un cliente.');
+            throw new \InvalidArgumentException('--local-id es obligatorio para asignar un representado.');
         }
 
         $user = User::query()->lockForUpdate()->find($localId);
         if (! $user || ! $user->hasRole('Cliente')) {
-            throw new \InvalidArgumentException('El usuario elegido no tiene rol Cliente.');
+            throw new \InvalidArgumentException('El usuario elegido no tiene rol Representado.');
         }
         if (! Negocio::query()->withoutGlobalScope(BlockedClientRecordScope::class)->where('user_id', $user->id)->exists()) {
-            throw new \InvalidArgumentException('Solo se pueden vincular clientes con al menos un negocio local.');
+            throw new \InvalidArgumentException('Solo se pueden vincular representados con al menos un negocio local.');
         }
         if (filled($user->hs_id) && (string) $user->hs_id !== $hubspotId) {
-            throw new \InvalidArgumentException('El cliente ya está vinculado a otro contacto de HubSpot.');
+            throw new \InvalidArgumentException('El representado ya está vinculado a otro contacto de HubSpot.');
         }
         if (User::query()->where('hs_id', $hubspotId)->where('id', '!=', $user->id)->exists()
             || Lead::query()->where('hubspot_id', $hubspotId)->exists()) {

@@ -359,11 +359,11 @@ class ExternalPlatformFieldCatalogService
                 ['birthdate', 'Fecha de nacimiento'], ['gender', 'Género'], ['tags', 'Etiquetas'], ['added_at', 'Creado'], ['updated_at', 'Actualizado'],
             ],
             'deal' => [
-                ['id', 'ID'], ['title', 'Título'], ['status', 'Estado'], ['customer', 'Cliente'], ['responsible_user', 'Responsable'],
+                ['id', 'ID'], ['title', 'Título'], ['status', 'Estado'], ['customer', 'Representado'], ['responsible_user', 'Responsable'],
                 ['source', 'Origen'], ['estimated_closing_date', 'Fecha estimada de cierre'], ['amount', 'Importe'], ['currency', 'Moneda'], ['added_at', 'Creado'], ['updated_at', 'Actualizado'],
             ],
             'project' => [
-                ['id', 'ID'], ['title', 'Título'], ['status', 'Estado'], ['customer', 'Cliente'], ['responsible_user', 'Responsable'],
+                ['id', 'ID'], ['title', 'Título'], ['status', 'Estado'], ['customer', 'Representado'], ['responsible_user', 'Responsable'],
                 ['description', 'Descripción'], ['starts_on', 'Fecha de inicio'], ['due_on', 'Fecha límite'], ['budget', 'Presupuesto'], ['added_at', 'Creado'], ['updated_at', 'Actualizado'],
             ],
         ];

@@ -69,7 +69,7 @@ class RefreshActiveClientCosSnapshotsTest extends TestCase
         });
 
         $this->artisan('cos:refresh-active-clients --limit=10')
-            ->expectsOutputToContain("Cliente {$dueClient->id}: COS actualizado (con cambio de estatus).")
+            ->expectsOutputToContain("Representado {$dueClient->id}: COS actualizado (con cambio de estatus).")
             ->assertExitCode(0);
 
         $dueClient->refresh();

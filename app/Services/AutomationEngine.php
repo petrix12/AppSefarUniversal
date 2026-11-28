@@ -336,7 +336,7 @@ class AutomationEngine
 
     private function createTask(AutomationRun $run, ?User $client): array
     {
-        $client ??= throw new RuntimeException('La acción crear tarea requiere un cliente.');
+        $client ??= throw new RuntimeException('La acción crear tarea requiere un representado.');
         $config = (array) $run->action->config;
         $assignee = $this->resolveRecipient($config['assignee'] ?? 'owner', $client, $config);
 
@@ -395,7 +395,7 @@ class AutomationEngine
 
     private function setCustomField(AutomationRun $run, ?User $client): array
     {
-        $client ??= throw new RuntimeException('La acción actualizar campo requiere un cliente.');
+        $client ??= throw new RuntimeException('La acción actualizar campo requiere un representado.');
         $config = (array) $run->action->config;
         $fieldKey = (string) ($config['field_key'] ?? '');
 
@@ -421,7 +421,7 @@ class AutomationEngine
 
     private function moveWorkflow(AutomationRun $run, ?User $client): array
     {
-        $client ??= throw new RuntimeException('La acción mover flujo requiere un cliente.');
+        $client ??= throw new RuntimeException('La acción mover flujo requiere un representado.');
         $config = (array) $run->action->config;
         $targetBoard = WorkflowBoard::find($config['target_board_id'] ?? null);
         $targetStage = WorkflowStage::find($config['target_stage_id'] ?? null);
@@ -436,7 +436,7 @@ class AutomationEngine
             ->first();
 
         if (! $source) {
-            return ['skipped' => true, 'reason' => 'El cliente no tiene una membresía activa de origen.'];
+            return ['skipped' => true, 'reason' => 'El representado no tiene una membresía activa de origen.'];
         }
 
         $membership = app(WorkflowTransferService::class)->transfer(

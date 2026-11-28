@@ -38,7 +38,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th style="padding: 10px 15px;">Solicitante</th>
-                    <th style="padding: 10px 15px;">Cliente</th>
+                    <th style="padding: 10px 15px;">Representado</th>
                     <th style="padding: 10px 15px;">Motivo</th>
                     <th style="padding: 10px 15px;">Detalles del Cupón</th>
                     <th style="padding: 10px 15px;">Comprobante</th>

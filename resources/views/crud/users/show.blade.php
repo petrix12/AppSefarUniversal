@@ -31,7 +31,7 @@
                 <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px"><span class="text-white font-weight-bold" style="font-size:2rem">{{ strtoupper(substr($displayName ?: '?', 0, 1)) }}</span></div>
                 <h4 class="mb-0">{{ $displayName ?: '(Sin nombre)' }}</h4>
                 <small class="text-muted">ID interno: <code>{{ $user->id }}</code></small>
-                <div class="mt-2">@if($user->hasRole('Cliente'))<span class="badge badge-success">Cliente</span>@else<span class="badge badge-secondary">Usuario interno</span>@endif</div>
+                <div class="mt-2">@if($user->hasRole('Cliente'))<span class="badge badge-success">Representado</span>@else<span class="badge badge-secondary">Usuario interno</span>@endif</div>
             </div>
             <div class="card-footer p-0"><ul class="list-group list-group-flush">
                 @if($user->email)<li class="list-group-item"><i class="fas fa-envelope text-primary mr-2"></i><a href="mailto:{{ $user->email }}">{{ $user->email }}</a></li>@endif

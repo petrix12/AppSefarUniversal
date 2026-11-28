@@ -308,7 +308,7 @@ class UserController extends Controller
         try {
             $status = \Illuminate\Support\Facades\Password::broker()->sendResetLink(['email' => $user->email]);
         } catch (\Throwable $exception) {
-            Log::warning('CRM: no se pudo enviar el enlace inicial a un cliente creado por administración', [
+            Log::warning('CRM: no se pudo enviar el enlace inicial a un representado creado por administración', [
                 'user_id' => $user->id,
                 'exception_type' => $exception::class,
             ]);
@@ -318,8 +318,8 @@ class UserController extends Controller
         return redirect()->route('crud.users.index')->with(
             $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT ? 'success' : 'warning',
             $status === \Illuminate\Support\Facades\Password::RESET_LINK_SENT
-                ? 'Contacto/cliente creado. Enviamos un enlace para que establezca su contraseña.'
-                : 'El contacto/cliente se creó, pero no se pudo enviar el enlace. Puede solicitarlo desde «Olvidé mi contraseña».'
+                ? 'Contacto/representado creado. Enviamos un enlace para que establezca su contraseña.'
+                : 'El contacto/representado se creó, pero no se pudo enviar el enlace. Puede solicitarlo desde «Olvidé mi contraseña».'
         );
     }
 
@@ -3239,7 +3239,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         $this->protectSuperadminAccount($user);
         if ($user->getAttribute('is_superadmin')) {
             $clientRole = Role::where('name', 'Cliente')->first();
-            abort_if($clientRole && $request->boolean('role'.$clientRole->id), 422, 'Retira primero la marca de superadmin antes de asignar el rol Cliente.');
+            abort_if($clientRole && $request->boolean('role'.$clientRole->id), 422, 'Retira primero la marca de superadmin antes de asignar el rol Representado.');
         }
         //dd($request->passport);
         // Validación
@@ -3582,7 +3582,7 @@ private function removeDuplicatesAndSort(array $cosuser): array
         abort_if($user->isCliente() !== $willBeClient && ! auth()->user()?->isSuperadmin(), 403,
             'Solo un superadmin puede cambiar una cuenta entre contacto y usuario interno.');
         abort_if($user->getAttribute('is_superadmin') && in_array('Cliente', $request->input('roles', []), true), 422,
-            'Retira primero la marca de superadmin antes de asignar el rol Cliente.');
+            'Retira primero la marca de superadmin antes de asignar el rol Representado.');
 
         // ✅ Datos básicos
         $user->name      = $request->name;

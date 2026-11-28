@@ -201,7 +201,7 @@
                             <div class="bo-installment-admin-head">
                                 <div>
                                     <span class="bo-context-label">Beneficios publicos</span>
-                                    <h4>Beneficios que vera el cliente</h4>
+                                    <h4>Beneficios que vera el representado</h4>
                                 </div>
                                 <button type="button" class="btn bo-inline-action" data-add-benefit>
                                     <i class="fas fa-plus mr-1" aria-hidden="true"></i> Agregar beneficio

@@ -4,7 +4,7 @@
             <h2
                 class="text-sm font-bold cbgSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
                 {{-- Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}} --}}
-                Cliente:
+                Representado:
                 {{ GetNombres($agclientes, 1) . ' ' . GetApellidos($agclientes, 1) . ' / ' . $agclientes[0]->IDCliente }}
                 {{ getServicio($agclientes[0]->IDCliente) ? ' / Servicio: ' . getServicio($agclientes[0]->IDCliente) : '' }}
             </h2>
@@ -84,7 +84,7 @@
                 <!-- *** CLIENTE *** -->
                 <div class="caja_per" style="top: 985px; left: 10px; ">
                     <span class="encabezado"
-                        title="{{ GetDatosMatrimonio($agclientes, 1) }}">{{ GetPersona(1) }}</span>
+                        title="{{ GetDatosMatrimonio($agclientes, 1) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona(1)) }}</span>
                     <span class="nombres">
                         {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ GetNombres($agclientes,1) }} --}}
                         <x-editar-persona-i-v2 :agclientes='$agclientes' :id='1' /> {{ GetNombres($agclientes, 1) }}
@@ -104,7 +104,7 @@
                 @for ($i = 2; $i <= 3; $i++)
                     <div class="caja_per" style="top: {{ 465 + ($i - 2) * 1040 }}px; left: 78px; ">
                         <span class="encabezado"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nombres">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -131,7 +131,7 @@
                 @for ($i = 4; $i <= 7; $i++)
                     <div class="caja_per" style="top: {{ 205 + ($i - 4) * 520 }}px; left: 280px; ">
                         <span class="encabezado"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nombres">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -158,7 +158,7 @@
                 @for ($i = 8; $i <= 15; $i++)
                     <div class="caja_per" style="top: {{ 75 + ($i - 8) * 260 }}px; left: 400px; ">
                         <span class="encabezado"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nombres">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -192,7 +192,7 @@
                 @for ($i = 16; $i <= 31; $i++)
                     <div class="caja_per" style="top: {{ 10 + ($i - 16) * 130 }}px; left: 705px; ">
                         <span class="encabezado"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nombres">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ GetNombres($agclientes,$i) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -232,7 +232,7 @@
                 <!-- *** CLIENTE *** -->
                 <div class="caja_per" style="top: 225px; left: 10px; ">
                     <span class="encabezado"
-                        title="{{ GetDatosMatrimonio($agclientes, 1) }}">{{ GetPersona(1) }}</span>
+                        title="{{ GetDatosMatrimonio($agclientes, 1) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona(1)) }}</span>
                     <span class="nombres">
                         {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='1'/>{{ Str::limit(GetNombres($agclientes,1), 30) }} --}}
                         <x-editar-persona-i-v2 :agclientes='$agclientes' :id='1' />
@@ -253,7 +253,7 @@
                 @for ($i = 2; $i <= 3; $i++)
                     <div class="caja_per" style="top: {{ 85 + ($i - 2) * 280 }}px; left: 100px; ">
                         <span class="encabezado"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nombres">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -286,7 +286,7 @@
                 @for ($i = 4; $i <= 7; $i++)
                     <div class="caja_abuelos" style="top: {{ 25 + ($i - 4) * 140 }}px; left: 390px; ">
                         <span class="encabezado_abl"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nom-abuelo">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -320,7 +320,7 @@
                 @for ($i = 8; $i <= 15; $i++)
                     <div class="caja_bisabuelos" style="top: {{ 10 + ($i - 8) * 70 }}px; left: 660px; ">
                         <span class="encabezado_bis"
-                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ GetPersona($i) }}</span>
+                            title="{{ GetDatosMatrimonio($agclientes, $i) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</span>
                         <span class="nom-bisabuelo">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
@@ -352,7 +352,7 @@
                     <div class="caja_tatarabuelos" style="top: {{ 10 + ($i - 16) * 35 }}px; left: 930px;"
                         title="{{ $vida = GetVidaCompleta($agclientes, $i) }}">
                         <span class="nom-tatarabuelos"
-                            title="{{ GetPersona($i) }} - {{ GetDatosMatrimonio($agclientes, $i) }}">
+                            title="{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }} - {{ GetDatosMatrimonio($agclientes, $i) }}">
                             {{-- <x-editar-persona :agclientes='$agclientes' :countries='$countries' :id='$i'/>{{ Str::limit(GetNombres($agclientes,$i), 30) }} --}}
                             <x-editar-persona-i-v2 :agclientes='$agclientes' :id='$i' />
                             {{ Str::limit(GetNombres($agclientes, $i), 30) }}

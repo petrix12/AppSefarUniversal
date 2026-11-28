@@ -87,7 +87,7 @@ class MondayController extends Controller
         $validated = $request->validate([
             'passport' => ['required', 'string', 'max:20'],
         ], [
-            'passport.required' => 'Ingresa el número de pasaporte del cliente.',
+            'passport.required' => 'Ingresa el número de pasaporte del representado.',
             'passport.max' => 'El pasaporte no puede tener más de 20 caracteres.',
         ]);
         $passport = trim($validated['passport']);
@@ -160,7 +160,7 @@ class MondayController extends Controller
 
             if (! $response->successful() || $response->json('errors')
                 || ! is_scalar($itemId) || blank((string) $itemId)) {
-                Log::warning('Monday rechazó el registro manual del cliente', [
+                Log::warning('Monday rechazó el registro manual del representado', [
                     'user_id' => $user->id,
                     'status' => $response->status(),
                     'errors' => $response->json('errors'),

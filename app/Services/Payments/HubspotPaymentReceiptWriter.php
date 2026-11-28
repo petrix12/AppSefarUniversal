@@ -35,7 +35,7 @@ class HubspotPaymentReceiptWriter
         $dealId = (string) ($c['deal']?->hubspot_id ?? '');
         $contacts = $dealId !== '' ? $this->associationIds('deals', $dealId, 'contacts') : [];
         if ($dealId !== '' && ! in_array($contactId, $contacts, true)) {
-            throw new PaymentSyncReviewException('El negocio HubSpot no está asociado al contacto del cliente.');
+            throw new PaymentSyncReviewException('El negocio HubSpot no está asociado al contacto del representado.');
         }
 
         // A non-billable tracking invoice mirrors the existing App document.
@@ -94,7 +94,7 @@ class HubspotPaymentReceiptWriter
             $paymentInvoices = $this->associationIds('commerce_payments', $paymentId, 'invoices');
             $paymentContacts = $this->associationIds('commerce_payments', $paymentId, 'contacts');
             if (array_diff($paymentInvoices, [$invoiceId]) || array_diff($paymentContacts, [$contactId])) {
-                throw new PaymentSyncReviewException('El pago HubSpot ya está vinculado a otra factura o a otro cliente.');
+                throw new PaymentSyncReviewException('El pago HubSpot ya está vinculado a otra factura o a otro representado.');
             }
             $this->associate('commerce_payments', $paymentId, 'contacts', $contactId);
             if ($dealId !== '') $this->associate('commerce_payments', $paymentId, 'deals', $dealId);

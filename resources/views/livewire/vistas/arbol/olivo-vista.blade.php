@@ -2,7 +2,7 @@
     <div class="p-2 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:text-center">
             <h2 class="text-sm font-bold ctaSefar cfrSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
-                Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}}
+                Representado: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}}
             </h2>
             <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                 ÁRBOL GENEALÓGICO (VISTA VERTICAL) 

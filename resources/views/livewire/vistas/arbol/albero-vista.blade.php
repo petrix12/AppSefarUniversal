@@ -3,7 +3,7 @@
         <div class="lg:text-center">
             <h2 class="text-sm font-bold ctvSefar cfaSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
                 {{-- Cliente: {{ $agclientes[0]->Nombres.', '.$agclientes[0]->Apellidos.' / '.$agclientes[0]->IDCliente}} --}}
-                Cliente: {{ GetNombres($agclientes,1) .' '. GetApellidos($agclientes,1).' / '.$agclientes[0]->IDCliente }}
+                Representado: {{ GetNombres($agclientes,1) .' '. GetApellidos($agclientes,1).' / '.$agclientes[0]->IDCliente }}
                 {{ getServicio($agclientes[0]->IDCliente) ? ' / Servicio: ' . getServicio($agclientes[0]->IDCliente) : '' }}
             </h2>
             <p class="mt-2 text-lg leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -63,11 +63,11 @@
             @endphp
             @if ($idT)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idT ) }}">{{ GetPersona($IDTatarabuelo) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idT ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDTatarabuelo)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuelo) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDTatarabuelo)) }}</a>
                 </h1>
             @endif
 
@@ -95,12 +95,12 @@
 
             @if ($idTa)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idTa ) }}">{{ GetPersona($IDTatarabuela) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idTa ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDTatarabuela)) }}</a>
                 </h1>
             @else
             <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDTatarabuela) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDTatarabuela)) }}</a>
                 </h1>
             </h1>
             @endif
@@ -139,11 +139,11 @@
 
             @if ($idB)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idB ) }}">{{ GetPersona($IDBisabuelo) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idB ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDBisabuelo)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDBisabuelo) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDBisabuelo)) }}</a>
                 </h1>
             @endif
 
@@ -170,11 +170,11 @@
 
             @if ($idBa)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idBa ) }}">{{ GetPersona($IDBisabuela) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idBa ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDBisabuela)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDBisabuela) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDBisabuela)) }}</a>
                 </h1>
             @endif
 
@@ -212,11 +212,11 @@
 
             @if ($idA)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idA ) }}">{{ GetPersona($IDAbuelo) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idA ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDAbuelo)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDAbuelo) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDAbuelo)) }}</a>
                 </h1>
             @endif
 
@@ -243,11 +243,11 @@
 
             @if ($idAa)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idAa ) }}">{{ GetPersona($IDAbuela) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idAa ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDAbuela)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDAbuela) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDAbuela)) }}</a>
                 </h1>
             @endif
 
@@ -285,11 +285,11 @@
 
             @if ($idP)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idP ) }}">{{ GetPersona($IDPadre) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idP ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDPadre)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDPadre) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDPadre)) }}</a>
                 </h1>
             @endif
 
@@ -316,11 +316,11 @@
 
             @if ($idM)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idM ) }}">{{ GetPersona($IDMadre) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idM ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDMadre)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDMadre) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDMadre)) }}</a>
                 </h1>
             @endif
 
@@ -358,11 +358,11 @@
 
             @if ($idS)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idS ) }}">{{ GetPersona($IDSolicitante) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idS ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDSolicitante)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDSolicitante) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDSolicitante)) }}</a>
                 </h1>
             @endif
 
@@ -388,11 +388,11 @@
 
             @if ($idC)
                 <h1 class="text-center font-bold text-sm pt-1 ctvSefar" title="Editar">
-                    <a href="{{ route('crud.agclientes.edit', $idC ) }}">{{ GetPersona($IDConyugue) }}</a>
+                    <a href="{{ route('crud.agclientes.edit', $idC ) }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDConyugue)) }}</a>
                 </h1>
             @else
                 <h1 class="text-center font-bold text-sm pt-1 text-red" title="Añadir">
-                    <a href="{{ route('crud.agclientes.create') }}">{{ GetPersona($IDConyugue) }}</a>
+                    <a href="{{ route('crud.agclientes.create') }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($IDConyugue)) }}</a>
                 </h1>
             @endif
 

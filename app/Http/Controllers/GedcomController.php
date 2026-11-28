@@ -71,7 +71,7 @@ class GedcomController extends Controller
         $root = Agcliente::findOrFail($id);
         $gedcom = $this->gedcomService->exportClientByAgclienteId($id);
 
-        return $this->downloadGedcom($gedcom, 'ARBOL CLIENTE ' . $root->IDCliente . '.ged');
+        return $this->downloadGedcom($gedcom, 'ARBOL REPRESENTADO ' . $root->IDCliente . '.ged');
     }
 
     public function gedcomexport()

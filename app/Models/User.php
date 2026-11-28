@@ -240,7 +240,7 @@ class User extends Authenticatable
     {
         $role = $this->getRoleNames();
 
-        return $role->first() ?? "Sin rol asignado";
+        return \App\Support\RepresentedLanguage::label($role->first() ?? 'Sin rol asignado');
     }
 
     /**

@@ -164,7 +164,7 @@
                     </aside>
 
                     <section class="bo-panel bo-client-panel">
-                        <h2>Datos del cliente</h2>
+                        <h2>Datos del representado</h2>
                         <div class="bo-form">
                             <label class="bo-field">
                                 <span>Correo electronico</span>

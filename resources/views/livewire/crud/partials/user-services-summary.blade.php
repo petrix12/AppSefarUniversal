@@ -25,7 +25,7 @@
     });
 
     $fallbackService = auth()->user()->roles->first()?->id === 1
-        ? ($user->servicio ?: ($user->getRoleNames()->first() ?: 'Cliente'))
+        ? ($user->servicio ?: (\App\Support\RepresentedLanguage::label($user->getRoleNames()->first()) ?: 'Representado'))
         : ($user->servicio ?: 'Usuario App');
     $baseService = $user->servicio
         ?: data_get($bankPurchases->first()?->metadata, 'requested_service')

@@ -67,7 +67,7 @@
                     <div class="lg:text-center">
                         <h2
                             class="text-sm font-bold cbgSefar tracking-wide pt-2 rounded-lg opacity-75 flex h-8 justify-center items-center">
-                            Cliente:
+                            Representado:
                             @if(sizeof($cliente)>0)
                             {{ $cliente[0]["nombres"] . ' ' . $cliente[0]["apellidos"] . ' / ' . $cliente[0]["passport"] }}
                             {{ ' / ' . $cliente[0]["servicio"] }}
@@ -170,8 +170,8 @@
                             <div class="tree-toolbar-control tree-toolbar-action">
                                 <div class="tree-toolbar-field">
                                     <label for="treeReturnToOriginalClient" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
-                                        title="Zoom">Regresar a Cliente</label>
-                                    <button id="treeReturnToOriginalClient" onclick="window.location.href='/tree/{{$columnasparatabla[0][0]["IDCliente"]}}'" class="csrSefar tree-fixed-action">Regresar a Cliente</button>
+                                        title="Zoom">Regresar a Representado</label>
+                                    <button id="treeReturnToOriginalClient" onclick="window.location.href='/tree/{{$columnasparatabla[0][0]["IDCliente"]}}'" class="csrSefar tree-fixed-action">Regresar a Representado</button>
                                 </div>
                             </div>
                             @endif
@@ -179,8 +179,8 @@
                             <div class="tree-toolbar-control tree-toolbar-action" id="treeReturnToClientWrap" style="display:none;">
                                 <div class="tree-toolbar-field">
                                     <label for="treeReturnToClient" class="tree-toolbar-label px-3 block text-sm font-medium text-gray-700"
-                                        title="Volver al cliente">Vista</label>
-                                    <button id="treeReturnToClient" type="button" class="csrSefar tree-fixed-action">Volver al cliente</button>
+                                        title="Volver al representado">Vista</label>
+                                    <button id="treeReturnToClient" type="button" class="csrSefar tree-fixed-action">Volver al representado</button>
                                 </div>
                             </div>
                             @endif
@@ -2595,7 +2595,7 @@ dialog::backdrop {
             {
                 title: 'Identificacion',
                 fields: [
-                    ['ID cliente', person.IDCliente],
+                    ['ID representado', person.IDCliente],
                     ['ID persona', person.IDPersona],
                     ['Sexo', person.Sexo],
                     ['Pasaporte', joinPanelParts(person.NPasaporte, person.PaisPasaporte)],

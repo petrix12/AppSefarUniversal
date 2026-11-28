@@ -12,11 +12,15 @@ class PreventBlockedClientDelivery
 {
     public function mail(MessageSending $event): ?bool
     {
+        if (! app(\App\Services\EmailDeliveryPolicy::class)->filterRecipients($event->message)) {
+            Log::notice('Correo suprimido: no quedan destinatarios con una dirección entregable.');
+            return false;
+        }
         foreach ([...$event->message->getTo(), ...$event->message->getCc(), ...$event->message->getBcc()] as $address) {
             try {
                 app(ClientRestrictionService::class)->assertEmailDeliverable($address->getAddress());
             } catch (\Symfony\Component\HttpKernel\Exception\HttpException $exception) {
-                Log::notice('Correo suprimido por bloqueo de cliente', ['reason' => 'client_restricted']);
+                Log::notice('Correo suprimido por una restricción de entrega.', ['reason' => 'delivery_restricted']);
                 return false;
             }
         }

@@ -491,7 +491,7 @@ class DeployController extends Controller
             str_contains($file, 'teamleader') => 'TEAMLEADER — Sincronizacion',
             str_contains($file, 'deploy') => 'DEPLOY — Despliegues y notificaciones',
             str_contains($file, 'hubspot') => 'HUBSPOT — Propietarios y sincronizacion',
-            str_contains($file, 'user') => 'USUARIOS — Gestion de clientes',
+            str_contains($file, 'user') => 'USUARIOS — Gestion de representados',
             str_contains($file, 'migration') => 'BASE DE DATOS — Estructura',
             default => 'GENERAL — Actualizacion del sistema',
         };

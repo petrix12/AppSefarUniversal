@@ -56,7 +56,7 @@
                                                 <div class="md:flex ms:flex-wrap">
                                                     <div class="px-1 py-2 m-2 flex">    {{-- IDCliente --}}
                                                         <div>
-                                                            <label for="IDCliente" class="block text-sm font-medium text-gray-700">ID Cliente</label>
+                                                            <label for="IDCliente" class="block text-sm font-medium text-gray-700">ID Representado</label>
                                                             <input value="{{ old('IDCliente', $IDCliente) }}" type="text" name="IDCliente" class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                                                             @error('IDCliente')
                                                                 <small style="color:red">*{{ $message }}*</small>
@@ -93,9 +93,9 @@
                                                             <select name="IDPersona" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                                                 @for ($i = 1; $i <=31; $i++)
                                                                     @if ( old('IDPersona') == $i)
-                                                                        <option value="{{ $i }}" selected>{{ GetPersona($i) }}</option>  
+                                                                        <option value="{{ $i }}" selected>{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</option>
                                                                     @else
-                                                                        <option value="{{ $i }}">{{ GetPersona($i) }}</option>    
+                                                                        <option value="{{ $i }}">{{ \App\Support\RepresentedLanguage::label(GetPersona($i)) }}</option>
                                                                     @endif
                                                                 @endfor
                                                             </select>

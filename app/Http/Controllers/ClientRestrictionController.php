@@ -47,7 +47,7 @@ class ClientRestrictionController extends Controller
         $ids = $request->boolean('apply_all') ? array_column($scan->candidates, 'id') : $data['ids'];
         $count = $scanner->apply($scan, $request->user(), $ids);
 
-        return redirect()->route('admin.client-restrictions.index')->with('success', $count.' clientes bloqueados. Las marcas externas quedan pendientes de sincronización.');
+        return redirect()->route('admin.client-restrictions.index')->with('success', $count.' representados bloqueados. Las marcas externas quedan pendientes de sincronización.');
     }
 
     public function unblock(Request $request, User $user, ClientRestrictionService $restrictions)
@@ -59,7 +59,7 @@ class ClientRestrictionController extends Controller
             $active = $restrictions->isAffirmative(data_get($state, 'contact.properties.retirado')) ||
                 collect($state['deals'])->contains(fn ($deal) => $restrictions->isAffirmative(data_get($deal, 'properties.el_cliente_se_encuentra_retirado')));
             if ($active) {
-                throw ValidationException::withMessages(['explanation' => 'HubSpot todavía indica que el cliente está retirado. Resuelve esa situación antes de desbloquearlo.']);
+                throw ValidationException::withMessages(['explanation' => 'HubSpot todavía indica que el representado está retirado. Resuelve esa situación antes de desbloquearlo.']);
             }
         }
         $restrictions->unblock($user, $request->user(), $data['explanation']);
@@ -70,7 +70,7 @@ class ClientRestrictionController extends Controller
     public function refresh(Request $request, User $user, ClientRestrictionService $restrictions)
     {
         $this->administrator($request);
-        abort_if(blank($user->hs_id), 422, 'Cliente sin ID de HubSpot.');
+        abort_if(blank($user->hs_id), 422, 'Representado sin ID de HubSpot.');
         $state = $this->retirement($user);
         $restrictions->detectHubspotRetirement($user, $state['contact'], $state['deals']);
 
@@ -87,7 +87,7 @@ class ClientRestrictionController extends Controller
         try {
             return app(HubspotService::class)->clientRetirement($user->hs_id);
         } catch (\Throwable $exception) {
-            \Log::warning('No se pudo comprobar el retiro del cliente', ['user_id' => $user->id, 'error' => $exception->getMessage()]);
+            \Log::warning('No se pudo comprobar el retiro del representado', ['user_id' => $user->id, 'error' => $exception->getMessage()]);
             throw ValidationException::withMessages(['hubspot' => 'No se pudo comprobar HubSpot. El bloqueo se mantiene; revisa la conexión y vuelve a intentarlo.']);
         }
     }

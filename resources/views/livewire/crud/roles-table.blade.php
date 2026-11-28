@@ -79,7 +79,7 @@
                                 {{ $role->id }}
                             </td>
                             <td class="px-6 py-2 whitespace-nowrap">
-                                {{ $role->name }}
+                                {{ \App\Support\RepresentedLanguage::label($role->name) }}
                             </td>
                             @can('crud.roles.edit')
                             <td class="py-2 whitespace-nowrap text-right font-medium">
